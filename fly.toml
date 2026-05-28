@@ -1,4 +1,4 @@
-app = "txcs2"
+app = "txcs2camp"
 primary_region = "gru"
 
 [build]
