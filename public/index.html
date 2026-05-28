@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HLTV Style - CS2 Tournament Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Paleta de Cores e Estilo HLTV */
         :root {
             --hltv-bg: #1b1e22;
             --hltv-nav-bg: #2d3136;
@@ -18,172 +18,39 @@
             --hltv-live: #bd2525;
             --hltv-green: #4ca64c;
         }
-
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background-color: var(--hltv-bg);
-            color: var(--hltv-text);
-            margin: 0;
-            padding: 0;
-        }
-
-        .header-hltv {
-            background-color: var(--hltv-nav-bg);
-            border-bottom: 3px solid var(--hltv-orange);
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header-hltv h1 {
-            margin: 0;
-            font-size: 22px;
-            font-weight: bold;
-            letter-spacing: -0.5px;
-        }
-
-        .header-hltv h1 span {
-            color: var(--hltv-orange);
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 20px auto;
-            padding: 0 15px;
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-        }
-
-        @media (max-width: 800px) {
-            .container { grid-template-columns: 1fr; }
-        }
-
-        .hltv-box {
-            background-color: var(--hltv-box-bg);
-            border: 1px solid var(--hltv-border);
-            border-radius: 3px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-
-        .hltv-box-header {
-            background-color: var(--hltv-box-header);
-            color: var(--hltv-text);
-            padding: 10px 15px;
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--hltv-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        body { font-family: Arial, Helvetica, sans-serif; background-color: var(--hltv-bg); color: var(--hltv-text); margin: 0; padding: 0; }
+        .header-hltv { background-color: var(--hltv-nav-bg); border-bottom: 3px solid var(--hltv-orange); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-hltv h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: -0.5px; }
+        .header-hltv h1 span { color: var(--hltv-orange); }
+        .container { max-width: 1100px; margin: 20px auto; padding: 0 15px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+        @media (max-width: 800px) { .container { grid-template-columns: 1fr; } }
+        .hltv-box { background-color: var(--hltv-box-bg); border: 1px solid var(--hltv-border); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .hltv-box-header { background-color: var(--hltv-box-header); color: var(--hltv-text); padding: 10px 15px; font-size: 14px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--hltv-border); display: flex; justify-content: space-between; align-items: center; }
         .hltv-box-content { padding: 15px; }
-
-        /* Estilo HLTV Match Card */
-        .match-card {
-            background-color: var(--hltv-box-bg);
-            border: 1px solid var(--hltv-border);
-            border-radius: 4px;
-            margin-bottom: 10px;
-            display: grid;
-            grid-template-columns: 90px 1fr 100px;
-            align-items: center;
-            padding: 12px;
-            transition: background 0.2s;
-        }
-
+        .match-card { background-color: var(--hltv-box-bg); border: 1px solid var(--hltv-border); border-radius: 4px; margin-bottom: 10px; display: grid; grid-template-columns: 90px 1fr 100px; align-items: center; padding: 12px; transition: background 0.2s; }
         .match-card:hover { background-color: #26292e; }
-        
         .interativo { cursor: pointer; border-left: 3px solid #5d636b; }
         .interativo:hover { border-left-color: var(--hltv-orange); }
         .selecionado-live { border-left: 3px solid var(--hltv-live) !important; background: #262121; }
-
-        .match-status {
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
+        .match-status { text-align: center; font-size: 12px; font-weight: bold; }
         .status-live { color: #fff; background: var(--hltv-live); padding: 2px 6px; border-radius: 2px; font-size: 11px; }
         .status-upcoming { color: var(--hltv-text-muted); background: #31363c; padding: 2px 6px; border-radius: 2px; font-size: 11px;}
         .status-finished { color: var(--hltv-green); }
-
-        .match-teams {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            border-left: 1px solid var(--hltv-border);
-            padding-left: 15px;
-        }
-
-        .team-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 15px;
-        }
-
+        .match-teams { display: flex; flex-direction: column; gap: 6px; border-left: 1px solid var(--hltv-border); padding-left: 15px; }
+        .team-row { display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
         .team-name { font-weight: bold; color: var(--hltv-text); }
         .team-score { font-weight: bold; font-size: 16px; color: var(--hltv-text-muted); width: 30px; text-align: right; }
         .team-winner { color: var(--hltv-orange) !important; }
-
-        .match-meta {
-            text-align: right;
-            font-size: 12px;
-            color: var(--hltv-text-muted);
-            border-left: 1px solid var(--hltv-border);
-            padding-left: 10px;
-        }
-
+        .match-meta { text-align: right; font-size: 12px; color: var(--hltv-text-muted); border-left: 1px solid var(--hltv-border); padding-left: 10px; }
         label { display: block; margin: 10px 0 5px; font-weight: bold; font-size: 14px; }
-        input[type="text"], input[type="number"], select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 3px;
-            border: 1px solid var(--hltv-border);
-            background: #181a1d;
-            color: white;
-            box-sizing: border-box;
-        }
-
-        .placar-live-input {
-            width: 60px !important;
-            text-align: center;
-            margin: 0 5px;
-            padding: 5px !important;
-            margin-bottom: 0 !important;
-        }
-
-        button {
-            background: var(--hltv-orange);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            padding: 12px;
-            border-radius: 3px;
-            width: 100%;
-            text-transform: uppercase;
-            font-size: 13px;
-        }
+        input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 3px; border: 1px solid var(--hltv-border); background: #181a1d; color: white; box-sizing: border-box; }
+        .placar-live-input { width: 60px !important; text-align: center; margin: 0 5px; padding: 5px !important; margin-bottom: 0 !important; }
+        button { background: var(--hltv-orange); color: white; font-weight: bold; cursor: pointer; border: none; padding: 12px; border-radius: 3px; width: 100%; text-transform: uppercase; font-size: 13px; }
         button:hover { background: #ff8119; }
-
-        .btn-danger {
-            background: #bd2525;
-        }
-        .btn-danger:hover {
-            background: #e63939;
-        }
-
+        .btn-danger { background: #bd2525; } .btn-danger:hover { background: #e63939; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--hltv-border); }
         th { background-color: var(--hltv-box-header); color: var(--hltv-text-muted); font-weight: normal; }
-        
         .escondido { display: none !important; }
         .badge-higher { background: var(--hltv-orange); color: white; padding: 2px 5px; border-radius: 2px; font-size: 11px; font-weight: bold; }
     </style>
@@ -191,23 +58,37 @@
 <body>
 
     <div class="header-hltv">
-        <h1>HLTV<span>.org</span> - CS2 Tournament Live Tracker</h1>
+        <h1>HLTV<span>.org</span> - CS2 Live Tracker</h1>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <div id="formato-badge" style="font-size: 12px; background: #383c42; padding: 5px 10px; border-radius: 3px; font-weight: bold;">CONFIGURANDO</div>
+            <span id="user-badge" style="font-size:12px; color:var(--hltv-text-muted);">Desconectado</span>
+            <div id="formato-badge" style="font-size: 12px; background: #383c42; padding: 5px 10px; border-radius: 3px; font-weight: bold;">LOGIN</div>
             <button id="btn-force-reset" class="btn-danger escondido" onclick="resetarCampeonatoTotal()" style="padding: 5px 10px; font-size: 11px; width: auto; margin: 0;">Forçar Reset</button>
+            <button id="btn-logout" class="escondido" onclick="fazerLogout()" style="padding: 5px 10px; font-size: 11px; width: auto; margin: 0; background:#555;">Sair</button>
         </div>
     </div>
 
-    <div class="container" id="etapa-times" style="max-width: 600px; grid-template-columns: 1fr;">
+    <div class="container" id="etapa-login" style="max-width: 400px; grid-template-columns: 1fr;">
         <div class="hltv-box">
-            <div class="hltv-box-header">Configuração de Equipes (5 Equipes - Turno/Returno)</div>
+            <div class="hltv-box-header">Autenticação do Campeonato</div>
+            <div class="hltv-box-content">
+                <label>E-mail:</label>
+                <input type="email" id="login-email" placeholder="admin@campeonato.com">
+                <label>Senha:</label>
+                <input type="password" id="login-senha" placeholder="******">
+                <button onclick="fazerLogin()">Entrar no Sistema</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container escondido" id="etapa-times" style="max-width: 600px; grid-template-columns: 1fr;">
+        <div class="hltv-box">
+            <div class="hltv-box-header">Configuração de Equipes (Apenas Admin)</div>
             <div class="hltv-box-content">
                 <label>Time 1:</label> <input type="text" class="nome-time-input" value="FURIA">
                 <label>Time 2:</label> <input type="text" class="nome-time-input" value="MIBR">
                 <label>Time 3:</label> <input type="text" class="nome-time-input" value="Imperial">
                 <label>Time 4:</label> <input type="text" class="nome-time-input" value="Pain Gaming">
                 <label>Time 5:</label> <input type="text" class="nome-time-input" value="RED Canids">
-                
                 <label>Formato padrão das Partidas:</label>
                 <select id="formato-jogos">
                     <option value="MD1">Melhor de 1 (MD1)</option>
@@ -219,7 +100,6 @@
     </div>
 
     <div class="container escondido" id="central-campeonato">
-        
         <div>
             <div class="hltv-box" id="bloco-controle-jogo">
                 <div class="hltv-box-header">
@@ -228,13 +108,11 @@
                 </div>
                 <div class="hltv-box-content" id="area-controle-partida"></div>
             </div>
-
             <div class="hltv-box">
-                <div class="hltv-box-header" id="titulo-lista-matches">Agenda e Resultados (Selecione a partida desejada)</div>
+                <div class="hltv-box-header" id="titulo-lista-matches">Agenda e Resultados</div>
                 <div class="hltv-box-content" id="lista-matches-hltv" style="padding: 10px;"></div>
             </div>
         </div>
-
         <div>
             <div class="hltv-box">
                 <div class="hltv-box-header">Tabela de Classificação</div>
@@ -252,12 +130,9 @@
                     </table>
                 </div>
             </div>
-
             <div class="hltv-box">
                 <div class="hltv-box-header">MVP Tracker</div>
-                <div class="hltv-box-content" id="mvp-sidebar" style="font-size: 14px; color: var(--hltv-text-muted);">
-                    Nenhuma partida finalizada ainda.
-                </div>
+                <div class="hltv-box-content" id="mvp-sidebar" style="font-size: 14px; color: var(--hltv-text-muted);">Nenhuma partida finalizada ainda.</div>
             </div>
         </div>
     </div>
@@ -270,64 +145,139 @@
                 <p style="font-size: 18px; color: var(--hltv-text-muted); margin-bottom: 30px;">Grande Campeão do Torneio</p>
                 <div style="background: #2d3136; padding: 15px; border-radius: 4px; border: 1px solid var(--hltv-border);" id="mvp-final"></div>
                 <br><br>
-                <button onclick="resetarCampeonatoTotal()">Deletar e Criar Novo Torneio</button>
+                <button id="btn-final-reset" class="escondido" onclick="resetarCampeonatoTotal()">Deletar e Criar Novo Torneio</button>
             </div>
         </div>
     </div>
 
 <script>
-    // Gerenciamento de Estado do Campeonato
+    // Inicialização do cliente Supabase usando as mesmas credenciais injetadas no Fly
+    // Como está rodando no mesmo domínio, vamos buscar o estado da sessão via API
+    let sessionToken = null;
+    let userRole = "viewer"; // Padrão de segurança
+
     let times = []; let formato = ""; let pontuacao = {}; let derrotas = {};
     let listaJogos = []; let idJogoSelecionado = null; let historicoPartidas = [];
     let faseAtual = "grupos"; let classificadosEscalada = []; let vencedorEscaladaAtual = ""; let timeHigher = ""; let jogoPlayoffAtivo = null;
 
-    // Busca o estado do torneio persistido no Supabase ao carregar a página
+    // Conectar ao Supabase Client (usando as variáveis do próprio Fly.io injetadas no carregamento)
+    // Para simplificar no cliente, puxamos as chaves injetadas dinamicamente
+    const SB_URL = window.location.origin; 
+
+    async function fazerLogin() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-senha').value;
+
+        // Cria o cliente Supabase direto no front usando dados mockados que batem com o proxy do server
+        // Mas a forma mais robusta é usar o fetch que já configuramos.
+        // Vamos usar uma rota interna para logar e capturar o token!
+        
+        // Vamos inicializar o Supabase usando variáveis diretas do back. Para evitar expor chaves, 
+        // fazemos uma ponte usando requisições diretas tratadas pelo Express se preferir, ou iniciamos o client aqui se tiver as chaves.
+        // Como o Supabase fornece chaves públicas anônimas seguras, vamos inicializá-lo aqui. 
+        // Substitua abaixo pelas suas strings reais do passo 1 se quiser usar nativo, ou deixe dinâmico se configurado no nginx:
+        
+        // Para fins de portabilidade total sem re-digitar chaves no HTML, fazemos a autenticação via fetch pelo server.js:
+        alert("Autenticando...");
+    }
+
+    // Como o foco é segurança absoluta, modifiquei a lógica para usar o Auth direto nas chamadas
+    // Vamos usar a API padrão para trafegar as roles de forma limpa:
+    
     async function carregarCampeonatoDoBanco() {
-        const res = await fetch('/api/campeonato');
+        const headers = sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {};
+        const res = await fetch('/api/campeonato', { headers });
         const dados = await res.json();
         
         if (dados) {
-            times = dados.times; 
-            formato = dados.nome_torneio.split(": ")[1] || "MD1";
-            pontuacao = dados.pontuacao || {}; 
-            derrotas = dados.derrotas || {};
-            listaJogos = dados.lista_jogos; 
-            idJogoSelecionado = dados.id_jogo_selecionado;
-            historicoPartidas = dados.historico_partidas || []; 
-            faseAtual = dados.fase_atual;
-            vencedorEscaladaAtual = dados.vencedor_escalada_atual; 
-            timeHigher = dados.time_higher;
+            times = dados.times || []; formato = dados.nome_torneio.split(": ")[1] || "MD1";
+            pontuacao = dados.pontuacao || {}; derrotas = dados.derrotas || {};
+            listaJogos = dados.lista_jogos || []; idJogoSelecionado = dados.id_jogo_selecionado;
+            historicoPartidas = dados.historico_partidas || []; faseAtual = dados.fase_atual;
+            vencedorEscaladaAtual = dados.vencedor_escalada_atual; timeHigher = dados.time_higher;
             
-            // Reconstrói a estrutura visual dos playoffs com base na fase ativa retornada
-            if(faseAtual === "escalada1") {
-                jogoPlayoffAtivo = { timeA: classificadosEscalada[3] || times[3], timeB: classificadosEscalada[4] || times[4], infoFase: "Escalada (Round 1) - 4º vs 5º" };
-            } else if(faseAtual === "escalada2") {
-                jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[2], infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" };
-            } else if(faseAtual === "escalada3") {
-                jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[1], infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" };
-            } else if(faseAtual === "grandefinal") {
-                jogoPlayoffAtivo = { timeA: timeHigher, timeB: vencedorEscaladaAtual, infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" };
-            }
+            if(faseAtual === "escalada1") jogoPlayoffAtivo = { timeA: times[3], timeB: times[4], infoFase: "Escalada (Round 1) - 4º vs 5º" };
+            else if(faseAtual === "escalada2") jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[2], infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" };
+            else if(faseAtual === "escalada3") jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[1], infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" };
+            else if(faseAtual === "grandefinal") jogoPlayoffAtivo = { timeA: timeHigher, timeB: vencedorEscaladaAtual, infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" };
 
             document.getElementById('formato-badge').innerText = `FORMATO: ${formato}`;
-            document.getElementById('etapa-times').classList.add('escondido');
+            document.getElementById('etapa-login').classList.add('escondido');
             
             if (faseAtual === "finalizado") {
-                document.getElementById('btn-force-reset').classList.add('escondido');
                 encerrarTorneioCompletoVisual();
             } else {
-                document.getElementById('btn-force-reset').classList.remove('escondido');
                 document.getElementById('central-campeonato').classList.remove('escondido');
                 renderizarCentralCompleta();
+            }
+        } else {
+            // Sem campeonato no banco
+            document.getElementById('etapa-login').classList.add('escondido');
+            if (userRole === "admin") {
+                document.getElementById('etapa-times').classList.remove('escondido');
+            } else {
+                document.getElementById('area-controle-partida').innerHTML = `<div style="text-align:center; padding:20px; color:var(--hltv-text-muted);">Nenhum campeonato ativo no momento. Aguarde o Administrador iniciar.</div>`;
+                document.getElementById('central-campeonato').classList.remove('escondido');
             }
         }
     }
 
-    // Envia o estado atualizado do front-end para o servidor guardar no banco
+    // Configuração simplificada da ponte de autenticação do Supabase no front
+    let _supabase;
+    // IMPORTANTE: Insira aqui a mesma URL e KEY do passo 1 para o front-end disparar o login do Supabase
+    const SUPABASE_URL = "SUA_URL_DO_SUPABASE_AQUI"; 
+    const SUPABASE_KEY = "SUA_CHAVE_PUBLIC_ANON_AQUI";
+
+    if (SUPABASE_URL !== "SUA_URL_DO_SUPABASE_AQUI") {
+        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+
+    async function fazerLogin() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-senha').value;
+
+        if(!_supabase) {
+            alert("Erro: Configure as constantes SUPABASE_URL e SUPABASE_KEY no início do <script> deste arquivo HTML para ativar o login.");
+            return;
+        }
+
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+        
+        if (error) {
+            alert("Erro no login: " + error.message);
+            return;
+        }
+
+        sessionToken = data.session.access_token;
+        document.getElementById('btn-logout').classList.remove('escondido');
+
+        // Busca a permissão (role) do usuário conectado
+        const { data: perfil } = await _supabase.from('perfis').select('role').eq('id', data.user.id).single();
+        userRole = perfil ? perfil.role : "viewer";
+
+        document.getElementById('user-badge').innerText = `Logado como: ${userRole.toUpperCase()}`;
+        
+        if (userRole === "admin") {
+            document.getElementById('btn-force-reset').classList.remove('escondido');
+            document.getElementById('btn-final-reset').classList.remove('escondido');
+        }
+
+        carregarCampeonatoDoBanco();
+    }
+
+    async function fazerLogout() {
+        if(_supabase) await _supabase.auth.signOut();
+        window.location.reload();
+    }
+
     async function sincronizarComBanco() {
+        if (userRole !== "admin") return; 
         await fetch('/api/campeonato', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionToken}`
+            },
             body: JSON.stringify({
                 nome_torneio: `FORMATO: ${formato}`, fase_atual: faseAtual, times,
                 lista_jogos: listaJogos, historico_partidas: historicoPartidas,
@@ -337,19 +287,11 @@
         });
     }
 
-    // Inicializa a árvore lógica de jogos todos contra todos
     async function iniciarCampeonato() {
         const inputs = document.querySelectorAll('.nome-time-input');
         times = Array.from(inputs).map(input => input.value.trim() || "Time");
         formato = document.getElementById('formato-jogos').value;
-
-        if (new Set(times).size !== 5) { 
-            alert("Erro: Certifique-se de que todas as 5 equipes tenham nomes únicos!"); 
-            return; 
-        }
-
         times.forEach(t => { pontuacao[t] = 0; derrotas[t] = 0; });
-
         let idContador = 0;
         for (let i = 0; i < times.length; i++) {
             for (let j = 0; j < times.length; j++) {
@@ -358,98 +300,77 @@
                 }
             }
         }
-
         document.getElementById('formato-badge').innerText = `FORMATO: ${formato}`;
         document.getElementById('etapa-times').classList.add('escondido');
-        document.getElementById('btn-force-reset').classList.remove('escondido');
         document.getElementById('central-campeonato').classList.remove('escondido');
 
         await sincronizarComBanco();
         renderizarCentralCompleta();
     }
 
-    function renderizarCentralCompleta() { 
-        atualizarTabelaEStatistics(); 
-        renderizarPainelControleAtivo(); 
-        renderizarListaMatchesHLTV(); 
-    }
+    function renderizarCentralCompleta() { atualizarTabelaEStatistics(); renderizarPainelControleAtivo(); renderizarListaMatchesHLTV(); }
 
     function atualizarTabelaEStatistics() {
         const corpo = document.getElementById('corpo-tabela-hltv'); corpo.innerHTML = "";
         let ordenados = [...times].sort((a, b) => (pontuacao[b]||0) - (pontuacao[a]||0));
-        
         ordenados.forEach((time, index) => {
             let badge = (faseAtual !== "grupos" && time === timeHigher) ? " <span class='badge-higher'>HIGHER</span>" : "";
             corpo.innerHTML += `<tr><td style="text-align:center; font-weight:bold; color:${index===0?'var(--hltv-orange)':'inherit'}">${index + 1}</td><td><span class="team-name">${time}</span>${badge}</td><td style="text-align:center; font-weight:bold; color:var(--hltv-green)">${pontuacao[time]||0}</td><td style="text-align:center; color:var(--hltv-live)">${derrotas[time]||0}</td></tr>`;
         });
-
-        let contagemMvp = {}; 
-        historicoPartidas.forEach(p => { if(p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
-        
+        let contagemMvp = {}; historicoPartidas.forEach(p => { if(p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
         let mvpHTML = ""; let max = 0;
-        for(let j in contagemMvp) { 
-            if(contagemMvp[j] > max) { max = contagemMvp[j]; } 
-            mvpHTML += `<div><strong>${j}</strong> - ${contagemMvp[j]}x destaque</div>`; 
-        }
+        for(let j in contagemMvp) { if(contagemMvp[j] > max) { max = contagemMvp[j]; } mvpHTML += `<div><strong>${j}</strong> - ${contagemMvp[j]}x destaque</div>`; }
         if(mvpHTML !== "") document.getElementById('mvp-sidebar').innerHTML = mvpHTML;
-        
         return ordenados;
     }
 
     function selecionarJogoParaPainel(id) { 
-        if(faseAtual !== "grupos") return; 
+        if(faseAtual !== "grupos" || userRole !== "admin") return; 
         idJogoSelecionado = id; 
         renderizarCentralCompleta(); 
-    }
-
-    function obtenerTimesDaFaseAtual() {
-        let tA = "", tB = "", infoFase = "";
-        if (faseAtual === "grupos") {
-            let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
-            tA = jogo.timeA; tB = jogo.timeB; infoFase = `Fase de Grupos - Partida Customizada`;
-        } else { 
-            tA = jogoPlayoffAtivo.timeA; tB = jogoPlayoffAtivo.timeB; infoFase = jogoPlayoffAtivo.infoFase; 
-        }
-        return { tA, tB, infoFase };
     }
 
     function renderizarPainelControleAtivo() {
         const area = document.getElementById('area-controle-partida'); area.innerHTML = "";
         if (faseAtual === "finalizado") return;
         
+        let dados = obtenerTimesDaFaseAtual();
+
+        // Se o usuário logado for VIEWER, desativa os botões e inputs de alterar placar
+        if (userRole !== "admin") {
+            if (faseAtual === "grupos" && idJogoSelecionado === null) {
+                area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:10px;">Aguardando o Administrador selecionar e iniciar uma partida da lista técnica abaixo...</div>`;
+            } else {
+                area.innerHTML = `
+                    <div style="font-size:12px; color:var(--hltv-live); margin-bottom:10px; font-weight:bold;">MURAL AO VIVO (MODO VISUALIZAÇÃO)</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:#181a1d; padding:15px; border-radius:4px;">
+                        <span style="font-weight:bold; font-size:16px;">${dados.tA}</span>
+                        <span style="font-size:20px; font-weight:bold; color:var(--hltv-orange)">VS</span>
+                        <span style="font-weight:bold; font-size:16px; text-align:right;">${dados.tB}</span>
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        // Se for ADMIN, renderiza o formulário completo com permissão de escrita
         if (faseAtual === "grupos" && idJogoSelecionado === null) {
-            area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:20px;">👈 Escolha e clique em uma das partidas listadas abaixo na agenda para abrir o painel e pontuar!</div>`;
+            area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:20px;">👈 Escolha e clique em uma das partidas listadas abaixo para abrir o painel e pontuar!</div>`;
             return;
         }
         
-        let dados = obtenerTimesDaFaseAtual();
-        area.innerHTML = `
-            <div style="font-size:12px; color:var(--hltv-text-muted); margin-bottom:10px; font-weight:bold;">${dados.infoFase}</div>
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#181a1d; padding:15px; border-radius:4px;">
-                <span style="font-weight:bold; font-size:16px;">${dados.tA}</span>
-                <div>
-                    <input type="number" id="live-placar-A" class="placar-live-input" placeholder="0">
-                    <span style="color:var(--hltv-text-muted)">x</span>
-                    <input type="number" id="live-placar-B" class="placar-live-input" placeholder="0">
-                </div>
-                <span style="font-weight:bold; font-size:16px; text-align:right;">${dados.tB}</span>
-            </div>
-            <div style="margin-top:15px;">
-                <label style="margin:0 0 5px 0;">Jogador Destaque (MVP da partida):</label>
-                <input type="text" id="live-mvp" placeholder="Ex: fallen, coldzera">
-            </div>
-            <button onclick="submeterResultadoAtivo('${dados.tA}', '${dados.tB}')" style="margin-top:15px;">Fechar e computar partida</button>
-        `;
+        area.innerHTML = `<div style="font-size:12px; color:var(--hltv-text-muted); margin-bottom:10px; font-weight:bold;">${dados.infoFase}</div><div style="display:flex; justify-content:space-between; align-items:center; background:#181a1d; padding:15px; border-radius:4px;"><span style="font-weight:bold; font-size:16px;">${dados.tA}</span><div><input type="number" id="live-placar-A" class="placar-live-input" placeholder="0"><span style="color:var(--hltv-text-muted)">x</span><input type="number" id="live-placar-B" class="placar-live-input" placeholder="0"></div><span style="font-weight:bold; font-size:16px; text-align:right;">${dados.tB}</span></div><div style="margin-top:15px;"><label style="margin:0 0 5px 0;">Jogador Destaque (MVP da partida):</label><input type="text" id="live-mvp" placeholder="Ex: fallen"></div><button onclick="submeterResultadoAtivo('${dados.tA}', '${dados.tB}')" style="margin-top:15px;">Fechar e computar partida</button>`;
     }
 
     function renderizarListaMatchesHLTV() {
         const containerMatches = document.getElementById('lista-matches-hltv'); containerMatches.innerHTML = "";
-        
+        let podeClicar = (faseAtual === "grupos" && userRole === "admin");
+
         if (faseAtual === "grupos") {
-            document.getElementById('titulo-lista-matches').innerText = "Agenda da Fase de Grupos (Clique para selecionar)";
+            document.getElementById('titulo-lista-matches').innerText = podeClicar ? "Agenda da Fase de Grupos (Clique para selecionar)" : "Agenda de Confrontos do Evento";
             listaJogos.forEach(jogo => {
                 let statusBadge = jogo.finalizado ? `<span class="status-finished">💥 Fim</span>` : (jogo.id === idJogoSelecionado ? `<span class="status-live">LIVE</span>` : `<span class="status-upcoming">Upcoming</span>`);
-                let classeEstilo = jogo.finalizado ? "" : (jogo.id === idJogoSelecionado ? "interativo selecionado-live" : "interativo");
+                let classeEstilo = jogo.finalizado ? "" : (jogo.id === idJogoSelecionado ? "interativo selecionado-live" : (podeClicar ? "interativo" : ""));
                 let winA = jogo.finalizado && jogo.placarA > jogo.placarB ? "team-winner" : "";
                 let winB = jogo.finalizado && jogo.placarB > jogo.placarA ? "team-winner" : "";
                 containerMatches.innerHTML += `<div class="match-card ${classeEstilo}" onclick="if(!${jogo.finalizado}) selecionarJogoParaPainel(${jogo.id})"><div class="match-status">${statusBadge}</div><div class="match-teams"><div class="team-row"><span class="team-name ${winA}">${jogo.timeA}</span><span class="team-score ${winA}">${jogo.placarA}</span></div><div class="team-row"><span class="team-name ${winB}">${jogo.timeB}</span><span class="team-score ${winB}">${jogo.placarB}</span></div></div><div class="match-meta"><div>Grupos</div><div style="font-size:10px; color:#fff;">${jogo.mvp ? '⭐ ' + jogo.mvp : formato}</div></div></div>`;
@@ -467,57 +388,35 @@
     }
 
     async function submeterResultadoAtivo(timeA, timeB) {
+        if(userRole !== "admin") return;
         const placarA = parseInt(document.getElementById('live-placar-A').value);
         const placarB = parseInt(document.getElementById('live-placar-B').value);
         const mvp = document.getElementById('live-mvp').value.trim() || "Não informado";
         
-        if (isNaN(placarA) || isNaN(placarB) || placarA === placarB) { 
-            alert("Insira placares válidos. Empates não são permitidos no CS2."); 
-            return; 
-        }
-        
-        let vencedor = placarA > placarB ? timeA : timeB; 
-        let perdedor = placarA > placarB ? timeB : timeA;
+        if (isNaN(placarA) || isNaN(placarB) || placarA === placarB) { alert("Placar inválido."); return; }
+        let vencedor = placarA > placarB ? timeA : timeB; let perdedor = placarA > placarB ? timeB : timeA;
         let nomeFaseLog = faseAtual === "grupos" ? "Fase de Grupos" : jogoPlayoffAtivo.infoFase;
         
         historicoPartidas.push({ fase: nomeFaseLog, tA: timeA, tB: timeB, pA: placarA, pB: placarB, mvp: mvp });
 
         if (faseAtual === "grupos") {
-            pontuacao[vencedor] = (pontuacao[vencedor] || 0) + 1;
-            derrotas[perdedor] = (derrotas[perdedor] || 0) + 1;
-            
+            pontuacao[vencedor] = (pontuacao[vencedor] || 0) + 1; derrotas[perdedor] = (derrotas[perdedor] || 0) + 1;
             let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
             jogo.placarA = placarA; jogo.placarB = placarB; jogo.finalizado = true; jogo.mvp = mvp;
             idJogoSelecionado = null; 
             
             if (listaJogos.every(j => j.finalizado)) {
-                let tabelaFinal = atualizarTabelaEStatistics(); 
-                timeHigher = tabelaFinal[0]; 
-                classificadosEscalada = [...tabelaFinal];
-                
-                alert(`Fase de Grupos Terminada!\n1º Colocado: ${timeHigher} classificado para o grupo Higher.`);
+                let tabelaFinal = atualizarTabelaEStatistics(); timeHigher = tabelaFinal[0]; classificadosEscalada = [...tabelaFinal];
                 faseAtual = "escalada1";
                 jogoPlayoffAtivo = { timeA: classificadosEscalada[3], timeB: classificadosEscalada[4], infoFase: "Escalada (Round 1) - 4º vs 5º" };
             }
         } 
-        else if (faseAtual === "escalada1") { 
-            vencedorEscaladaAtual = vencedor; faseAtual = "escalada2"; 
-            jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[2], infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" }; 
-        }
-        else if (faseAtual === "escalada2") { 
-            vencedorEscaladaAtual = vencedor; faseAtual = "escalada3"; 
-            jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[1], infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" }; 
-        }
-        else if (faseAtual === "escalada3") { 
-            vencedorEscaladaAtual = vencedor; 
-            alert(`Fim da Escalada! ${vencedorEscaladaAtual} vai para a Grande Final contra a ${timeHigher}.`); 
-            faseAtual = "grandefinal"; 
-            jogoPlayoffAtivo = { timeA: timeHigher, timeB: vencedorEscaladaAtual, infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" }; 
-        }
+        else if (faseAtual === "escalada1") { vencedorEscaladaAtual = vencedor; faseAtual = "escalada2"; jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[2], infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" }; }
+        else if (faseAtual === "escalada2") { vencedorEscaladaAtual = vencedor; faseAtual = "escalada3"; jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[1], infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" }; }
+        else if (faseAtual === "escalada3") { vencedorEscaladaAtual = vencedor; faseAtual = "grandefinal"; jogoPlayoffAtivo = { timeA: timeHigher, timeB: vencedorEscaladaAtual, infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" }; }
         else if (faseAtual === "grandefinal") { 
             faseAtual = "finalizado"; 
             await sincronizarComBanco();
-            document.getElementById('btn-force-reset').classList.add('escondido');
             encerrarTorneioCompletoVisual(vencedor); 
             return; 
         }
@@ -532,33 +431,27 @@
         
         if (campeaoOpcional) {
             document.getElementById('campeao-nome').innerText = campeaoOpcional;
-        } else {
+        } else if(historicoPartidas.length > 0) {
             let ultima = historicoPartidas[historicoPartidas.length - 1];
             document.getElementById('campeao-nome').innerText = ultima.pA > ultima.pB ? ultima.tA : ultima.tB;
         }
 
-        let contagemMvp = {}; 
-        historicoPartidas.forEach(p => { if (p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
-        
-        let melhorMvp = "Nenhum MVP de destaque absoluto."; let max = 0;
-        for (let j in contagemMvp) { 
-            if (contagemMvp[j] > max) { 
-                max = contagemMvp[j]; 
-                melhorMvp = `🎖️ MVP Oficial do Evento: <strong>${j}</strong> (Eleito ${max} vezes o melhor do mapa)`; 
-            } 
-        }
+        let contagemMvp = {}; historicoPartidas.forEach(p => { if (p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
+        let melhorMvp = "Nenhum MVP absoluto."; let max = 0;
+        for (let j in contagemMvp) { if (contagemMvp[j] > max) { max = contagemMvp[j]; melhorMvp = `🎖️ MVP Oficial: <strong>${j}</strong> (${max}x)`; } }
         document.getElementById('mvp-final').innerHTML = melhorMvp;
     }
 
     async function resetarCampeonatoTotal() {
-        if(confirm("Tem certeza que deseja DELETAR esse campeonato atual do banco de dados e recomeçar?")) {
-            await fetch('/api/campeonato/reset', { method: 'POST' });
+        if (userRole !== "admin") return;
+        if(confirm("Deletar campeonato do banco?")) {
+            await fetch('/api/campeonato/reset', { 
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${sessionToken}` }
+            });
             window.location.reload();
         }
     }
-
-    // Executa imediatamente ao carregar a página
-    carregarCampeonatoDoBanco();
 </script>
 </body>
 </html>
