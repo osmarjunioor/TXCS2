@@ -199,11 +199,6 @@
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-senha').value;
 
-        if(!_supabase) {
-            alert("Configure as constantes SUPABASE_URL e SUPABASE_KEY no código para realizar login.");
-            return;
-        }
-
         const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
         if (error) { alert("Acesso negado: " + error.message); return; }
 
