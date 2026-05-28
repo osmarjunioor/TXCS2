@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HLTV Style - CS2 Tournament Tracker</title>
+    <!-- Biblioteca Oficial do Supabase Auth/Database -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -31,7 +32,7 @@
         .hltv-box-header { background-color: var(--hltv-box-header); color: var(--hltv-text); padding: 10px 15px; font-size: 14px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--hltv-border); display: flex; justify-content: space-between; align-items: center; }
         .hltv-box-content { padding: 15px; }
         
-        /* Cards de Partidas */
+        /* Cards de Partidas estilo HLTV */
         .match-card { background-color: var(--hltv-box-bg); border: 1px solid var(--hltv-border); border-radius: 4px; margin-bottom: 10px; display: grid; grid-template-columns: 90px 1fr 100px; align-items: center; padding: 12px; transition: background 0.2s; }
         .match-card:hover { background-color: #26292e; }
         .interativo { cursor: pointer; border-left: 3px solid #5d636b; }
@@ -50,7 +51,6 @@
         .team-winner { color: var(--hltv-orange) !important; }
         .match-meta { text-align: right; font-size: 12px; color: var(--hltv-text-muted); border-left: 1px solid var(--hltv-border); padding-left: 10px; }
         
-        /* Formulários e Inputs */
         label { display: block; margin: 10px 0 5px; font-weight: bold; font-size: 14px; }
         input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 3px; border: 1px solid var(--hltv-border); background: #181a1d; color: white; box-sizing: border-box; }
         .placar-live-input { width: 60px !important; text-align: center; margin: 0 5px; padding: 5px !important; margin-bottom: 0 !important; }
@@ -65,13 +65,14 @@
         .escondido { display: none !important; }
         .badge-higher { background: var(--hltv-orange); color: white; padding: 2px 5px; border-radius: 2px; font-size: 11px; font-weight: bold; }
 
-        /* Estilos do Modal de Login */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-box { background: var(--hltv-box-bg); border: 1px solid var(--hltv-border); padding: 25px; border-radius: 6px; width: 320px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
+        /* Estilos da Janela de Login Admin (Modal) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: var(--hltv-box-bg); border: 1px solid var(--hltv-border); padding: 25px; border-radius: 6px; width: 320px; box-shadow: 0 5px 25px rgba(0,0,0,0.6); }
     </style>
 </head>
 <body>
 
+    <!-- BARRA SUPERIOR HLTV -->
     <div class="header-hltv">
         <h1>HLTV<span>.org</span> - CS2 Live Tracker</h1>
         <div style="display: flex; gap: 10px; align-items: center;">
@@ -84,10 +85,11 @@
         </div>
     </div>
 
+    <!-- JANELA MODAL DE AUTENTICAÇÃO -->
     <div id="modal-login" class="modal-overlay escondido">
         <div class="modal-box">
-            <h3 style="margin-top:0; color:var(--hltv-orange);">Autenticação Admin</h3>
-            <label>E-mail:</label>
+            <h3 style="margin-top:0; color:var(--hltv-orange); text-align:center;">Painel Administrativo</h3>
+            <label>E-mail Admin:</label>
             <input type="email" id="login-email" placeholder="admin@campeonato.com">
             <label>Senha:</label>
             <input type="password" id="login-senha" placeholder="******">
@@ -96,6 +98,7 @@
         </div>
     </div>
 
+    <!-- TELA DE CRIAÇÃO (APENAS ADMIN LOGADO SE BANCO VAZIO) -->
     <div class="container escondido" id="etapa-times" style="max-width: 600px; grid-template-columns: 1fr;">
         <div class="hltv-box">
             <div class="hltv-box-header">Configuração de Equipes (Novo Torneio)</div>
@@ -105,7 +108,7 @@
                 <label>Time 3:</label> <input type="text" class="nome-time-input" value="Imperial">
                 <label>Time 4:</label> <input type="text" class="nome-time-input" value="Pain Gaming">
                 <label>Time 5:</label> <input type="text" class="nome-time-input" value="RED Canids">
-                <label>Formato padrão:</label>
+                <label>Formato padrão das Partidas:</label>
                 <select id="formato-jogos">
                     <option value="MD1">Melhor de 1 (MD1)</option>
                     <option value="MD3">Melhor de 3 (MD3)</option>
@@ -115,7 +118,9 @@
         </div>
     </div>
 
+    <!-- CENTRAL DE JOGOS E CLASSIFICAÇÃO -->
     <div class="container" id="central-campeonato">
+        <!-- COLUNA ESQUERDA -->
         <div>
             <div class="hltv-box" id="bloco-controle-jogo">
                 <div class="hltv-box-header">
@@ -123,7 +128,7 @@
                     <span class="status-live">LIVE</span>
                 </div>
                 <div class="hltv-box-content" id="area-controle-partida">
-                    <div style="text-align:center; color:var(--hltv-text-muted); padding:10px;">Carregando informações do servidor...</div>
+                    <div style="text-align:center; color:var(--hltv-text-muted); padding:10px;">Carregando dados do servidor...</div>
                 </div>
             </div>
 
@@ -133,6 +138,7 @@
             </div>
         </div>
 
+        <!-- COLUNA DIREITA -->
         <div>
             <div class="hltv-box">
                 <div class="hltv-box-header">Tabela de Classificação</div>
@@ -158,6 +164,7 @@
         </div>
     </div>
 
+    <!-- TELA RECAPITULATIVA FINAL -->
     <div class="container escondido" id="etapa-final" style="max-width: 600px; grid-template-columns: 1fr;">
         <div class="hltv-box" style="border: 2px solid var(--hltv-orange);">
             <div class="hltv-box-header" style="background: var(--hltv-orange); color: black; text-align: center; display: block;">🏆 Evento Concluído 🏆</div>
@@ -172,52 +179,68 @@
     </div>
 
 <script>
-    // CONFIGURAÇÃO DO SUPABASE (Substitua pelos seus dados reais)
+    // ==========================================
+    // CONFIGURAÇÃO DO SUPABASE (COLE SEUS DADOS DAQUI)
+    // ==========================================
     const SUPABASE_URL = "https://oxqnnrbrewbrkjhbgqre.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_SGTO5UToXmbN4sMjTJ-5vw_tNMlnY-E";
 
-    let _supabase = null;
-    if (SUPABASE_URL !== "https://oxqnnrbrewbrkjhbgqre.supabase.co") {
-        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
+    // Inicialização direta do cliente Supabase
+    const _supabase = (SUPABASE_URL && SUPABASE_URL.indexOf("http") === 0) ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-    // Variáveis de Controle de Estado
+    // Controle de Sessão e Permissões
     let sessionToken = null;
     let userRole = "viewer"; 
 
+    // Estrutura de Memória Local
     let times = []; let formato = ""; let pontuacao = {}; let derrotas = {};
     let listaJogos = []; let idJogoSelecionado = null; let historicoPartidas = [];
     let faseAtual = "grupos"; let classificadosEscalada = []; let vencedorEscaladaAtual = ""; let timeHigher = ""; let jogoPlayoffAtivo = null;
 
     function alternarModalLogin(abrir) {
         const modal = document.getElementById('modal-login');
-        if (abrir) modal.classList.remove('escondido');
-        else modal.classList.add('escondido');
+        if (modal) {
+            if (abrir) modal.classList.remove('escondido');
+            else modal.classList.add('escondido');
+        }
     }
 
     async function fazerLogin() {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-senha').value;
 
-        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-        if (error) { alert("Acesso negado: " + error.message); return; }
-
-        sessionToken = data.session.access_token;
-        const { data: perfil } = await _supabase.from('perfis').select('role').eq('id', data.user.id).single();
-        userRole = perfil ? perfil.role : "viewer";
-
-        if (userRole === "admin") {
-            document.getElementById('user-badge').innerText = "Modo: Administrador";
-            document.getElementById('btn-abrir-login').classList.add('escondido');
-            document.getElementById('btn-logout').classList.remove('escondido');
-            document.getElementById('btn-force-reset').classList.remove('escondido');
-            document.getElementById('btn-final-reset').classList.remove('escondido');
-            alternarModalLogin(false);
-        } else {
-            alert("Você não tem permissões administrativas.");
-            fazerLogout();
+        if(!_supabase) {
+            alert("Erro de configuração: Certifique-se de preencher as chaves SUPABASE_URL e SUPABASE_KEY dentro do <script>.");
+            return;
         }
-        carregarCampeonatoDoBanco();
+
+        try {
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+            if (error) { alert("Acesso negado: " + error.message); return; }
+
+            sessionToken = data.session.access_token;
+            
+            // Verifica o nível de permissão (role) na tabela customizada 'perfis'
+            const { data: perfil, error: perfilErr } = await _supabase.from('perfis').select('role').eq('id', data.user.id).single();
+            userRole = (perfil && !perfilErr) ? perfil.role : "viewer";
+
+            if (userRole === "admin") {
+                document.getElementById('user-badge').innerText = "Modo: Administrador";
+                document.getElementById('btn-abrir-login').classList.add('escondido');
+                document.getElementById('btn-logout').classList.remove('escondido');
+                document.getElementById('btn-force-reset').classList.remove('escondido');
+                if(document.getElementById('btn-final-reset')) document.getElementById('btn-final-reset').classList.remove('escondido');
+                alternarModalLogin(false);
+            } else {
+                alert("Sua conta possui acesso apenas de Leitura (Espectador).");
+                fazerLogout();
+                return;
+            }
+            
+            await carregarCampeonatoDoBanco();
+        } catch (err) {
+            alert("Erro ao conectar ao Supabase: " + err.message);
+        }
     }
 
     async function fazerLogout() {
@@ -226,53 +249,65 @@
     }
 
     async function carregarCampeonatoDoBanco() {
-        const res = await fetch('/api/campeonato');
-        const dados = await res.json();
-        
-        if (dados) {
-            document.getElementById('central-campeonato').classList.remove('escondido');
-            document.getElementById('etapa-times').classList.add('escondido');
+        try {
+            const res = await fetch('/api/campeonato');
+            const dados = await res.json();
             
-            times = dados.times || []; formato = dados.nome_torneio.split(": ")[1] || "MD1";
-            pontuacao = dados.pontuacao || {}; derrotas = dados.derrotas || {};
-            listaJogos = dados.lista_jogos || []; idJogoSelecionado = dados.id_jogo_selecionado;
-            historicoPartidas = dados.historico_partidas || []; faseAtual = dados.fase_atual;
-            vencedorEscaladaAtual = dados.vencedor_escalada_atual; timeHigher = dados.time_higher;
-            
-            if(faseAtual === "escalada1") jogoPlayoffAtivo = { timeA: times[3], timeB: times[4], infoFase: "Escalada (Round 1) - 4º vs 5º" };
-            else if(faseAtual === "escalada2") jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[2], infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" };
-            else if(faseAtual === "escalada3") { jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[1], infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" }; }
-            else if(faseAtual === "grandefinal") jogoPlayoffAtivo = { timeA: timeHigher, timeB: vencedorEscaladaAtual, infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" };
+            if (dados) {
+                document.getElementById('central-campeonato').classList.remove('escondido');
+                document.getElementById('etapa-times').classList.add('escondido');
+                
+                times = dados.times || []; 
+                formato = dados.nome_torneio ? (dados.nome_torneio.split(": ")[1] || "MD1") : "MD1";
+                pontuacao = dados.pontuacao || {}; 
+                derrotas = dados.derrotas || {};
+                listaJogos = dados.lista_jogos || []; 
+                idJogoSelecionado = dados.id_jogo_selecionado;
+                historicoPartidas = dados.historico_partidas || []; 
+                faseAtual = dados.fase_atual || "grupos";
+                vencedorEscaladaAtual = dados.vencedor_escalada_atual || ""; 
+                timeHigher = dados.time_higher || "";
+                
+                if(faseAtual === "escalada1") jogoPlayoffAtivo = { timeA: times[3], timeB: times[4], infoFase: "Escalada (Round 1) - 4º vs 5º" };
+                else if(faseAtual === "escalada2") jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[2], infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" };
+                else if(faseAtual === "escalada3") jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[1], infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" };
+                else if(faseAtual === "grandefinal") jogoPlayoffAtivo = { timeA: timeHigher, timeB: vencedorEscaladaAtual, infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" };
 
-            document.getElementById('formato-badge').innerText = `FORMATO: ${formato}`;
-            
-            if (faseAtual === "finalizado") encerrarTorneioCompletoVisual();
-            else renderizarCentralCompleta();
-        } else {
-            // Se não houver campeonato iniciado no banco
-            if (userRole === "admin") {
-                document.getElementById('central-campeonato').classList.add('escondido');
-                document.getElementById('etapa-times').classList.remove('escondido');
+                document.getElementById('formato-badge').innerText = `FORMATO: ${formato}`;
+                
+                if (faseAtual === "finalizado") encerrarTorneioCompletoVisual();
+                else renderizarCentralCompleta();
             } else {
-                document.getElementById('area-controle-partida').innerHTML = `<div style="text-align:center; padding:20px; color:var(--hltv-text-muted);">Nenhum campeonato ativo no momento. Aguarde o Admin iniciar o evento.</div>`;
-                document.getElementById('lista-matches-hltv').innerHTML = "";
-                atualizarTabelaEStatistics();
+                if (userRole === "admin") {
+                    document.getElementById('central-campeonato').classList.add('escondido');
+                    document.getElementById('etapa-times').classList.remove('escondido');
+                } else {
+                    document.getElementById('area-controle-partida').innerHTML = `<div style="text-align:center; padding:20px; color:var(--hltv-text-muted);">Nenhum campeonato ativo no momento. Aguarde o Admin iniciar o evento.</div>`;
+                    document.getElementById('lista-matches-hltv').innerHTML = "";
+                    atualizarTabelaEStatistics();
+                }
             }
+        } catch (e) {
+            console.error("Erro ao puxar dados do campeonato:", e);
         }
     }
 
     async function sincronizarComBanco() {
         if (userRole !== "admin") return; 
-        await fetch('/api/campeonato', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
-            body: JSON.stringify({
-                nome_torneio: `FORMATO: ${formato}`, fase_atual: faseAtual, times,
-                lista_jogos: listaJogos, historico_partidas: historicoPartidas,
-                pontuacao, derrotas, id_jogo_selecionado: idJogoSelecionado,
-                vencedor_escalada_atual: vencedorEscaladaAtual, time_higher: timeHigher
-            })
-        });
+        try {
+            await fetch('/api/campeonato', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
+                body: JSON.stringify({
+                    nome_torneio: `FORMATO: ${formato}`, fase_atual: faseAtual, times,
+                    lista_jogos: listaJogos, historico_partidas: historicoPartidas,
+                    pontuacao, derrotas, id_jogo_selecionado: idJogoSelecionado,
+                    vencedor_escalada_atual: vencedorEscaladaAtual, time_higher: timeHigher
+                })
+            });
+        } catch (e) {
+            console.error("Erro ao sincronizar com servidor:", e);
+        }
     }
 
     async function iniciarCampeonato() {
@@ -280,7 +315,9 @@
         times = Array.from(inputs).map(input => input.value.trim() || "Time");
         formato = document.getElementById('formato-jogos').value;
         times.forEach(t => { pontuacao[t] = 0; derrotas[t] = 0; });
+        
         let idContador = 0;
+        listaJogos = [];
         for (let i = 0; i < times.length; i++) {
             for (let j = 0; j < times.length; j++) {
                 if (i !== j) {
@@ -294,19 +331,33 @@
         renderizarCentralCompleta();
     }
 
-    function renderizarCentralCompleta() { atualizarTabelaEStatistics(); renderizarPainelControleAtivo(); renderizarListaMatchesHLTV(); }
+    function renderizarCentralCompleta() { 
+        atualizarTabelaEStatistics(); 
+        renderizarPainelControleAtivo(); 
+        renderizarListaMatchesHLTV(); 
+    }
 
     function atualizarTabelaEStatistics() {
-        const corpo = document.getElementById('corpo-tabela-hltv'); corpo.innerHTML = "";
+        const corpo = document.getElementById('corpo-tabela-hltv'); 
+        if(!corpo) return [];
+        corpo.innerHTML = "";
+        
         let ordenados = [...times].sort((a, b) => (pontuacao[b]||0) - (pontuacao[a]||0));
         ordenados.forEach((time, index) => {
             let badge = (faseAtual !== "grupos" && time === timeHigher) ? " <span class='badge-higher'>HIGHER</span>" : "";
             corpo.innerHTML += `<tr><td style="text-align:center; font-weight:bold; color:${index===0?'var(--hltv-orange)':'inherit'}">${index + 1}</td><td><span class="team-name">${time}</span>${badge}</td><td style="text-align:center; font-weight:bold; color:var(--hltv-green)">${pontuacao[time]||0}</td><td style="text-align:center; color:var(--hltv-live)">${derrotas[time]||0}</td></tr>`;
         });
-        let contagemMvp = {}; historicoPartidas.forEach(p => { if(p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
+        
+        let contagemMvp = {}; 
+        historicoPartidas.forEach(p => { if(p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
+        
         let mvpHTML = ""; let max = 0;
-        for(let j in contagemMvp) { if(contagemMvp[j] > max) { max = contagemMvp[j]; } mvpHTML += `<div><strong>${j}</strong> - ${contagemMvp[j]}x destaque</div>`; }
-        if(mvpHTML !== "") document.getElementById('mvp-sidebar').innerHTML = mvpHTML;
+        for(let j in contagemMvp) { 
+            if(contagemMvp[j] > max) { max = contagemMvp[j]; } 
+            mvpHTML += `<div><strong>${j}</strong> - ${contagemMvp[j]}x destaque</div>`; 
+        }
+        const sidebar = document.getElementById('mvp-sidebar');
+        if(sidebar && mvpHTML !== "") sidebar.innerHTML = mvpHTML;
         return ordenados;
     }
 
@@ -316,16 +367,30 @@
         renderizarCentralCompleta(); 
     }
 
+    function obterTimesDaFaseAtual() {
+        let tA = "", tB = "", infoFase = "";
+        if (faseAtual === "grupos") {
+            let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
+            if(jogo) { tA = jogo.timeA; tB = jogo.timeB; }
+            infoFase = `Fase de Grupos - Partida Customizada`;
+        } else if (jogoPlayoffAtivo) { 
+            tA = jogoPlayoffAtivo.timeA; tB = jogoPlayoffAtivo.timeB; infoFase = jogoPlayoffAtivo.infoFase; 
+        }
+        return { tA, tB, infoFase };
+    }
+
     function renderizarPainelControleAtivo() {
-        const area = document.getElementById('area-controle-partida'); area.innerHTML = "";
+        const area = document.getElementById('area-controle-partida'); 
+        if(!area) return;
+        area.innerHTML = "";
         if (faseAtual === "finalizado") return;
         
-        let dados = obtenerTimesDaFaseAtual();
+        let dados = obterTimesDaFaseAtual();
 
-        // MODO PÚBLICO (VIEWER): Apenas exibe o placar em destaque sem formulários
+        // Tratamento do Modo Viewer público
         if (userRole !== "admin") {
             if (faseAtual === "grupos" && idJogoSelecionado === null) {
-                area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:10px;">Nenhuma partida selecionada pelo administrador no momento.</div>`;
+                area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:10px;">Nenhuma partida ativa selecionada pelo administrador no momento.</div>`;
             } else {
                 area.innerHTML = `
                     <div style="font-size:11px; color:var(--hltv-live); margin-bottom:10px; font-weight:bold; text-transform:uppercase;">Transmissão em Andamento</div>
@@ -339,7 +404,7 @@
             return;
         }
 
-        // MODO PRIVADO (ADMIN): Exibe inputs de score e botão de computar
+        // Tratamento do Modo Admin logado
         if (faseAtual === "grupos" && idJogoSelecionado === null) {
             area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:20px;">👈 Selecione uma partida abaixo na lista técnica para pontuar.</div>`;
             return;
@@ -349,7 +414,9 @@
     }
 
     function renderizarListaMatchesHLTV() {
-        const containerMatches = document.getElementById('lista-matches-hltv'); containerMatches.innerHTML = "";
+        const containerMatches = document.getElementById('lista-matches-hltv'); 
+        if(!containerMatches) return;
+        containerMatches.innerHTML = "";
         let podeClicar = (faseAtual === "grupos" && userRole === "admin");
 
         if (faseAtual === "grupos") {
@@ -368,7 +435,7 @@
             }
             for(let i = historicoPartidas.length - 1; i >= 0; i--) {
                 let p = historicoPartidas[i]; let winA = p.pA > p.pB ? "team-winner" : ""; let winB = p.pB > p.pA ? "team-winner" : "";
-                containerMatches.innerHTML += `rmatch-card"><div class="match-status"><span class="status-finished">💥 Fim</span></div><div class="match-teams"><div class="team-row"><span class="team-name ${winA}">${p.tA}</span><span class="team-score ${winA}">${p.pA}</span></div><div class="team-row"><span class="team-name ${winB}">${p.tB}</span><span class="team-score ${winB}">${p.pB}</span></div></div><div class="match-meta"><div style="font-size:10px; color:var(--hltv-text-muted);">${p.fase}</div><div style="color:#fff; font-size:11px;">⭐ ${p.mvp}</div></div></div>`;
+                containerMatches.innerHTML += `<div class="match-card"><div class="match-status"><span class="status-finished">💥 Fim</span></div><div class="match-teams"><div class="team-row"><span class="team-name ${winA}">${p.tA}</span><span class="team-score ${winA}">${p.pA}</span></div><div class="team-row"><span class="team-name ${winB}">${p.tB}</span><span class="team-score ${winB}">${p.pB}</span></div></div><div class="match-meta"><div style="font-size:10px; color:var(--hltv-text-muted);">${p.fase}</div><div style="color:#fff; font-size:11px;">⭐ ${p.mvp}</div></div></div>`;
             }
         }
     }
@@ -379,7 +446,7 @@
         const placarB = parseInt(document.getElementById('live-placar-B').value);
         const mvp = document.getElementById('live-mvp').value.trim() || "Não informado";
         
-        if (isNaN(placarA) || isNaN(placarB) || placarA === placarB) { alert("Preencha o placar corretamente."); return; }
+        if (isNaN(placarA) || isNaN(placarB) || placarA === placarB) { alert("Preencha o placar corretamente. Empates não são permitidos."); return; }
         let vencedor = placarA > placarB ? timeA : timeB; let perdedor = placarA > placarB ? timeB : timeA;
         let nomeFaseLog = faseAtual === "grupos" ? "Fase de Grupos" : jogoPlayoffAtivo.infoFase;
         
@@ -388,7 +455,7 @@
         if (faseAtual === "grupos") {
             pontuacao[vencedor] = (pontuacao[vencedor] || 0) + 1; derrotas[perdedor] = (derrotas[perdedor] || 0) + 1;
             let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
-            jogo.placarA = placarA; jogo.placarB = placarB; jogo.finalizado = true; jogo.mvp = mvp;
+            if(jogo) { jogo.placarA = placarA; jogo.placarB = placarB; jogo.finalizado = true; jogo.mvp = mvp; }
             idJogoSelecionado = null; 
             
             if (listaJogos.every(j => j.finalizado)) {
@@ -423,14 +490,16 @@
         }
 
         let contagemMvp = {}; historicoPartidas.forEach(p => { if (p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
-        let melhorMvp = "Nenhum MVP."; let max = 0;
-        for (let j in contagemMvp) { if (contagemMvp[j] > max) { max = contagemMvp[j]; melhorMvp = `🎖️ MVP Oficial: <strong>${j}</strong> (${max}x)`; } }
-        document.getElementById('mvp-final').innerHTML = melhorMvp;
+        let melhorMvp = "Nenhum MVP selecionado."; let max = 0;
+        for (let j in contagemMvp) { if (contagemMvp[j] > max) { max = contagemMvp[j]; melhorMvp = `🎖️ MVP Oficial: <strong>${j}</strong> (${max}x destaque)`; } }
+        
+        const finalBox = document.getElementById('mvp-final');
+        if(finalBox) finalBox.innerHTML = melhorMvp;
     }
 
     async function resetarCampeonatoTotal() {
         if (userRole !== "admin") return;
-        if(confirm("Deseja mesmo DELETAR o campeonato do banco de dados?")) {
+        if(confirm("Tem certeza absoluta que deseja DELETAR o campeonato ativo do banco de dados e recomeçar?")) {
             await fetch('/api/campeonato/reset', { 
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${sessionToken}` }
@@ -439,6 +508,7 @@
         }
     }
 
+    // Inicializa a escuta pública e puxa as informações estáticas em tempo real
     carregarCampeonatoDoBanco();
 </script>
 </body>
