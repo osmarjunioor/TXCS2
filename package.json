@@ -1,12 +1,13 @@
 {
   "name": "cs2-hltv-manager",
   "version": "1.0.0",
-  "description": "Gerenciador de campeonatos de CS2 estilo HLTV",
+  "description": "Gerenciador de campeonatos de CS2 estilo HLTV com Supabase",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.43.4",
     "express": "^4.19.2"
   }
 }
