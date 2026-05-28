@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TX HLTV - CS2 Tournament Manager</title>
+    <title>HLTV Style - CS2 Tournament Manager</title>
     <style>
         /* Paleta de Cores e Estilo HLTV */
         :root {
@@ -173,6 +173,13 @@
         }
         button:hover { background: #ff8119; }
 
+        .btn-danger {
+            background: #bd2525;
+        }
+        .btn-danger:hover {
+            background: #e63939;
+        }
+
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--hltv-border); }
         th { background-color: var(--hltv-box-header); color: var(--hltv-text-muted); font-weight: normal; }
@@ -184,8 +191,11 @@
 <body>
 
     <div class="header-hltv">
-        <h1>TX-HLTV<span>.org</span> - CS2 Tournament Live Tracker</h1>
-        <div id="formato-badge" style="font-size: 12px; background: #383c42; padding: 5px 10px; border-radius: 3px; font-weight: bold;">CONFIGURANDO</div>
+        <h1>HLTV<span>.org</span> - CS2 Tournament Live Tracker</h1>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div id="formato-badge" style="font-size: 12px; background: #383c42; padding: 5px 10px; border-radius: 3px; font-weight: bold;">CONFIGURANDO</div>
+            <button id="btn-force-reset" class="btn-danger escondido" onclick="resetarCampeonatoTotal()" style="padding: 5px 10px; font-size: 11px; width: auto; margin: 0;">Forçar Reset</button>
+        </div>
     </div>
 
     <div class="container" id="etapa-times" style="max-width: 600px; grid-template-columns: 1fr;">
@@ -216,14 +226,12 @@
                     <span>Painel de Transmissão / Atualizar Placar</span>
                     <span class="status-live">LIVE</span>
                 </div>
-                <div class="hltv-box-content" id="area-controle-partida">
-                    </div>
+                <div class="hltv-box-content" id="area-controle-partida"></div>
             </div>
 
             <div class="hltv-box">
                 <div class="hltv-box-header" id="titulo-lista-matches">Agenda e Resultados (Selecione a partida desejada)</div>
-                <div class="hltv-box-content" id="lista-matches-hltv" style="padding: 10px;">
-                    </div>
+                <div class="hltv-box-content" id="lista-matches-hltv" style="padding: 10px;"></div>
             </div>
         </div>
 
@@ -262,340 +270,295 @@
                 <p style="font-size: 18px; color: var(--hltv-text-muted); margin-bottom: 30px;">Grande Campeão do Torneio</p>
                 <div style="background: #2d3136; padding: 15px; border-radius: 4px; border: 1px solid var(--hltv-border);" id="mvp-final"></div>
                 <br><br>
-                <button onclick="window.location.reload()">Resetar e Criar Novo</button>
+                <button onclick="resetarCampeonatoTotal()">Deletar e Criar Novo Torneio</button>
             </div>
         </div>
     </div>
 
 <script>
-    let times = [];
-    let formato = "";
-    let pontuacao = {}; 
-    let derrotas = {};
-    
-    let listaJogos = [];
-    let idJogoSelecionado = null; // Controla qual jogo da lista está ativo no painel
-    let historicoPartidas = [];
+    // Gerenciamento de Estado do Campeonato
+    let times = []; let formato = ""; let pontuacao = {}; let derrotas = {};
+    let listaJogos = []; let idJogoSelecionado = null; let historicoPartidas = [];
+    let faseAtual = "grupos"; let classificadosEscalada = []; let vencedorEscaladaAtual = ""; let timeHigher = ""; let jogoPlayoffAtivo = null;
 
-    let faseAtual = "grupos"; // "grupos", "escalada1", "escalada2", "escalada3", "grandefinal", "finalizado"
-    let classificadosEscalada = [];
-    let vencedorEscaladaAtual = "";
-    let timeHigher = "";
+    // Busca o estado do torneio persistido no Supabase ao carregar a página
+    async function carregarCampeonatoDoBanco() {
+        const res = await fetch('/api/campeonato');
+        const dados = await res.json();
+        
+        if (dados) {
+            times = dados.times; 
+            formato = dados.nome_torneio.split(": ")[1] || "MD1";
+            pontuacao = dados.pontuacao || {}; 
+            derrotas = dados.derrotas || {};
+            listaJogos = dados.lista_jogos; 
+            idJogoSelecionado = dados.id_jogo_selecionado;
+            historicoPartidas = dados.historico_partidas || []; 
+            faseAtual = dados.fase_atual;
+            vencedorEscaladaAtual = dados.vencedor_escalada_atual; 
+            timeHigher = dados.time_higher;
+            
+            // Reconstrói a estrutura visual dos playoffs com base na fase ativa retornada
+            if(faseAtual === "escalada1") {
+                jogoPlayoffAtivo = { timeA: classificadosEscalada[3] || times[3], timeB: classificadosEscalada[4] || times[4], infoFase: "Escalada (Round 1) - 4º vs 5º" };
+            } else if(faseAtual === "escalada2") {
+                jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[2], infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" };
+            } else if(faseAtual === "escalada3") {
+                jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[1], infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" };
+            } else if(faseAtual === "grandefinal") {
+                jogoPlayoffAtivo = { timeA: timeHigher, timeB: vencedorEscaladaAtual, infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" };
+            }
 
-    // Armazena dados fixos dos jogos da fase de escalada/final para não depender da escolha do usuário
-    let jogoPlayoffAtivo = null;
+            document.getElementById('formato-badge').innerText = `FORMATO: ${formato}`;
+            document.getElementById('etapa-times').classList.add('escondido');
+            
+            if (faseAtual === "finalizado") {
+                document.getElementById('btn-force-reset').classList.add('escondido');
+                encerrarTorneioCompletoVisual();
+            } else {
+                document.getElementById('btn-force-reset').classList.remove('escondido');
+                document.getElementById('central-campeonato').classList.remove('escondido');
+                renderizarCentralCompleta();
+            }
+        }
+    }
 
-    function iniciarCampeonato() {
+    // Envia o estado atualizado do front-end para o servidor guardar no banco
+    async function sincronizarComBanco() {
+        await fetch('/api/campeonato', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nome_torneio: `FORMATO: ${formato}`, fase_atual: faseAtual, times,
+                lista_jogos: listaJogos, historico_partidas: historicoPartidas,
+                pontuacao, derrotas, id_jogo_selecionado: idJogoSelecionado,
+                vencedor_escalada_atual: vencedorEscaladaAtual, time_higher: timeHigher
+            })
+        });
+    }
+
+    // Inicializa a árvore lógica de jogos todos contra todos
+    async function iniciarCampeonato() {
         const inputs = document.querySelectorAll('.nome-time-input');
         times = Array.from(inputs).map(input => input.value.trim() || "Time");
         formato = document.getElementById('formato-jogos').value;
 
-        if (new Set(times).size !== 5) {
-            alert("Erro: Certifique-se de que todas as 5 equipes tenham nomes únicos!");
-            return;
+        if (new Set(times).size !== 5) { 
+            alert("Erro: Certifique-se de que todas as 5 equipes tenham nomes únicos!"); 
+            return; 
         }
 
         times.forEach(t => { pontuacao[t] = 0; derrotas[t] = 0; });
 
-        // Monta a lista fixa com identificadores únicos id
         let idContador = 0;
         for (let i = 0; i < times.length; i++) {
             for (let j = 0; j < times.length; j++) {
                 if (i !== j) {
-                    listaJogos.push({ 
-                        id: idContador++, 
-                        timeA: times[i], 
-                        timeB: times[j], 
-                        finalizado: false, 
-                        placarA: "-", 
-                        placarB: "-", 
-                        mvp: "" 
-                    });
+                    listaJogos.push({ id: idContador++, timeA: times[i], timeB: times[j], finalizado: false, placarA: "-", placarB: "-", mvp: "" });
                 }
             }
         }
 
         document.getElementById('formato-badge').innerText = `FORMATO: ${formato}`;
         document.getElementById('etapa-times').classList.add('escondido');
+        document.getElementById('btn-force-reset').classList.remove('escondido');
         document.getElementById('central-campeonato').classList.remove('escondido');
 
+        await sincronizarComBanco();
         renderizarCentralCompleta();
     }
 
-    function renderizarCentralCompleta() {
-        atualizarTabelaEStatistics();
-        renderizarPainelControleAtivo();
-        renderizarListaMatchesHLTV();
+    function renderizarCentralCompleta() { 
+        atualizarTabelaEStatistics(); 
+        renderizarPainelControleAtivo(); 
+        renderizarListaMatchesHLTV(); 
     }
 
     function atualizarTabelaEStatistics() {
-        const corpo = document.getElementById('corpo-tabela-hltv');
-        corpo.innerHTML = "";
-
-        let ordenados = [...times].sort((a, b) => pontuacao[b] - pontuacao[a]);
-
+        const corpo = document.getElementById('corpo-tabela-hltv'); corpo.innerHTML = "";
+        let ordenados = [...times].sort((a, b) => (pontuacao[b]||0) - (pontuacao[a]||0));
+        
         ordenados.forEach((time, index) => {
-            let badge = "";
-            if (faseAtual !== "grupos" && time === timeHigher) {
-                badge = " <span class='badge-higher'>HIGHER</span>";
-            }
-            corpo.innerHTML += `
-                <tr>
-                    <td style="text-align:center; font-weight:bold; color:${index===0?'var(--hltv-orange)':'inherit'}">${index + 1}</td>
-                    <td><span class="team-name">${time}</span>${badge}</td>
-                    <td style="text-align:center; font-weight:bold; color:var(--hltv-green)">${pontuacao[time]}</td>
-                    <td style="text-align:center; color:var(--hltv-live)">${derrotas[time]}</td>
-                </tr>
-            `;
+            let badge = (faseAtual !== "grupos" && time === timeHigher) ? " <span class='badge-higher'>HIGHER</span>" : "";
+            corpo.innerHTML += `<tr><td style="text-align:center; font-weight:bold; color:${index===0?'var(--hltv-orange)':'inherit'}">${index + 1}</td><td><span class="team-name">${time}</span>${badge}</td><td style="text-align:center; font-weight:bold; color:var(--hltv-green)">${pontuacao[time]||0}</td><td style="text-align:center; color:var(--hltv-live)">${derrotas[time]||0}</td></tr>`;
         });
 
-        let contagemMvp = {};
+        let contagemMvp = {}; 
         historicoPartidas.forEach(p => { if(p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
         
-        let mvpHTML = "";
-        let max = 0;
-        for(let j in contagemMvp) {
-            if(contagemMvp[j] > max) { max = contagemMvp[j]; }
-            mvpHTML += `<div><strong>${j}</strong> - ${contagemMvp[j]}x destaque</div>`;
+        let mvpHTML = ""; let max = 0;
+        for(let j in contagemMvp) { 
+            if(contagemMvp[j] > max) { max = contagemMvp[j]; } 
+            mvpHTML += `<div><strong>${j}</strong> - ${contagemMvp[j]}x destaque</div>`; 
         }
         if(mvpHTML !== "") document.getElementById('mvp-sidebar').innerHTML = mvpHTML;
-
+        
         return ordenados;
     }
 
-    // Define qual jogo o usuário clicou para transmitir/pontuar
-    function selecionarJogoParaPainel(id) {
-        if(faseAtual !== "grupos") return; // Escolha livre apenas na fase de grupos
-        idJogoSelecionado = id;
-        renderizarCentralCompleta();
+    function selecionarJogoParaPainel(id) { 
+        if(faseAtual !== "grupos") return; 
+        idJogoSelecionado = id; 
+        renderizarCentralCompleta(); 
+    }
+
+    function obtenerTimesDaFaseAtual() {
+        let tA = "", tB = "", infoFase = "";
+        if (faseAtual === "grupos") {
+            let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
+            tA = jogo.timeA; tB = jogo.timeB; infoFase = `Fase de Grupos - Partida Customizada`;
+        } else { 
+            tA = jogoPlayoffAtivo.timeA; tB = jogoPlayoffAtivo.timeB; infoFase = jogoPlayoffAtivo.infoFase; 
+        }
+        return { tA, tB, infoFase };
     }
 
     function renderizarPainelControleAtivo() {
-        const area = document.getElementById('area-controle-partida');
-        area.innerHTML = "";
-
+        const area = document.getElementById('area-controle-partida'); area.innerHTML = "";
         if (faseAtual === "finalizado") return;
-
-        let tA = "", tB = "", infoFase = "";
-
-        if (faseAtual === "grupos") {
-            if (idJogoSelecionado === null) {
-                area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:20px;">
-                                    👈 Escolha e clique em uma das partidas listadas abaixo na agenda para abrir o painel e pontuar!
-                                  </div>`;
-                return;
-            }
-            let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
-            tA = jogo.timeA; tB = jogo.timeB;
-            infoFase = `Fase de Grupos - Partida Customizada`;
-        } else {
-            // Nas fases de escalada, os jogos são lineares e obrigatórios
-            tA = jogoPlayoffAtivo.timeA;
-            tB = jogoPlayoffAtivo.timeB;
-            infoFase = jogoPlayoffAtivo.infoFase;
+        
+        if (faseAtual === "grupos" && idJogoSelecionado === null) {
+            area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:20px;">👈 Escolha e clique em uma das partidas listadas abaixo na agenda para abrir o painel e pontuar!</div>`;
+            return;
         }
-
+        
+        let dados = obtenerTimesDaFaseAtual();
         area.innerHTML = `
-            <div style="font-size:12px; color:var(--hltv-text-muted); margin-bottom:10px; font-weight:bold;">${infoFase}</div>
+            <div style="font-size:12px; color:var(--hltv-text-muted); margin-bottom:10px; font-weight:bold;">${dados.infoFase}</div>
             <div style="display:flex; justify-content:space-between; align-items:center; background:#181a1d; padding:15px; border-radius:4px;">
-                <span style="font-weight:bold; font-size:16px;">${tA}</span>
+                <span style="font-weight:bold; font-size:16px;">${dados.tA}</span>
                 <div>
                     <input type="number" id="live-placar-A" class="placar-live-input" placeholder="0">
                     <span style="color:var(--hltv-text-muted)">x</span>
                     <input type="number" id="live-placar-B" class="placar-live-input" placeholder="0">
                 </div>
-                <span style="font-weight:bold; font-size:16px; text-align:right;">${tB}</span>
+                <span style="font-weight:bold; font-size:16px; text-align:right;">${dados.tB}</span>
             </div>
             <div style="margin-top:15px;">
                 <label style="margin:0 0 5px 0;">Jogador Destaque (MVP da partida):</label>
                 <input type="text" id="live-mvp" placeholder="Ex: fallen, coldzera">
             </div>
-            <button onclick="submeterResultadoAtivo('${tA}', '${tB}')" style="margin-top:15px;">Fechar e computar partida</button>
+            <button onclick="submeterResultadoAtivo('${dados.tA}', '${dados.tB}')" style="margin-top:15px;">Fechar e computar partida</button>
         `;
     }
 
     function renderizarListaMatchesHLTV() {
-        const containerMatches = document.getElementById('lista-matches-hltv');
-        containerMatches.innerHTML = "";
-
+        const containerMatches = document.getElementById('lista-matches-hltv'); containerMatches.innerHTML = "";
+        
         if (faseAtual === "grupos") {
             document.getElementById('titulo-lista-matches').innerText = "Agenda da Fase de Grupos (Clique para selecionar)";
-            
             listaJogos.forEach(jogo => {
-                let statusBadge = `<span class="status-upcoming">Upcoming</span>`;
-                let classeEstilo = "interativo";
-                
-                if (jogo.finalizado) {
-                    statusBadge = `<span class="status-finished">💥 Fim</span>`;
-                    classeEstilo = "";
-                } else if (jogo.id === idJogoSelecionado) {
-                    statusBadge = `<span class="status-live">LIVE</span>`;
-                    classeEstilo = "interativo selecionado-live";
-                }
-
+                let statusBadge = jogo.finalizado ? `<span class="status-finished">💥 Fim</span>` : (jogo.id === idJogoSelecionado ? `<span class="status-live">LIVE</span>` : `<span class="status-upcoming">Upcoming</span>`);
+                let classeEstilo = jogo.finalizado ? "" : (jogo.id === idJogoSelecionado ? "interativo selecionado-live" : "interativo");
                 let winA = jogo.finalizado && jogo.placarA > jogo.placarB ? "team-winner" : "";
-                let winB = joke=jogo.finalizado && jogo.placarB > jogo.placarA ? "team-winner" : "";
-
-                containerMatches.innerHTML += `
-                    <div class="match-card ${classeEstilo}" onclick="if(!${jogo.finalizado}) selecionarJogoParaPainel(${jogo.id})">
-                        <div class="match-status">${statusBadge}</div>
-                        <div class="match-teams">
-                            <div class="team-row"><span class="team-name ${winA}">${jogo.timeA}</span><span class="team-score ${winA}">${jogo.placarA}</span></div>
-                            <div class="team-row"><span class="team-name ${winB}">${jogo.timeB}</span><span class="team-score ${winB}">${jogo.placarB}</span></div>
-                        </div>
-                        <div class="match-meta">
-                            <div>Grupos</div>
-                            <div style="font-size:10px; color:#fff;">${jogo.mvp ? '⭐ ' + jogo.mvp : formato}</div>
-                        </div>
-                    </div>
-                `;
+                let winB = jogo.finalizado && jogo.placarB > jogo.placarA ? "team-winner" : "";
+                containerMatches.innerHTML += `<div class="match-card ${classeEstilo}" onclick="if(!${jogo.finalizado}) selecionarJogoParaPainel(${jogo.id})"><div class="match-status">${statusBadge}</div><div class="match-teams"><div class="team-row"><span class="team-name ${winA}">${jogo.timeA}</span><span class="team-score ${winA}">${jogo.placarA}</span></div><div class="team-row"><span class="team-name ${winB}">${jogo.timeB}</span><span class="team-score ${winB}">${jogo.placarB}</span></div></div><div class="match-meta"><div>Grupos</div><div style="font-size:10px; color:#fff;">${jogo.mvp ? '⭐ ' + jogo.mvp : formato}</div></div></div>`;
             });
         } else {
-            // Tela de Playoffs (Escalada)
             document.getElementById('titulo-lista-matches').innerText = "Playoffs - Chave de Escalada";
-            
             if(faseAtual !== "finalizado" && jogoPlayoffAtivo) {
-                containerMatches.innerHTML += `
-                    <div class="match-card selecionado-live">
-                        <div class="match-status"><span class="status-live">LIVE</span></div>
-                        <div class="match-teams">
-                            <div class="team-row"><span class="team-name">${jogoPlayoffAtivo.timeA}</span><span class="team-score">-</span></div>
-                            <div class="team-row"><span class="team-name">${jogoPlayoffAtivo.timeB}</span><span class="team-score">-</span></div>
-                        </div>
-                        <div class="match-meta"><div>Playoffs</div><div style="color:var(--hltv-orange)">MD3</div></div>
-                    </div>
-                `;
+                containerMatches.innerHTML += `<div class="match-card selecionado-live"><div class="match-status"><span class="status-live">LIVE</span></div><div class="match-teams"><div class="team-row"><span class="team-name">${jogoPlayoffAtivo.timeA}</span><span class="team-score">-</span></div><div class="team-row"><span class="team-name">${jogoPlayoffAtivo.timeB}</span><span class="team-score">-</span></div></div><div class="match-meta"><div>Playoffs</div><div style="color:var(--hltv-orange)">MD3</div></div></div>`;
             }
-
-            // Exibe as que já passaram nos playoffs
             for(let i = historicoPartidas.length - 1; i >= 0; i--) {
-                let p = historicoPartidas[i];
-                let winA = p.pA > p.pB ? "team-winner" : "";
-                let winB = p.pB > p.pA ? "team-winner" : "";
-
-                containerMatches.innerHTML += `
-                    <div class="match-card">
-                        <div class="match-status"><span class="status-finished">💥 Fim</span></div>
-                        <div class="match-teams">
-                            <div class="team-row"><span class="team-name ${winA}">${p.tA}</span><span class="team-score ${winA}">${p.pA}</span></div>
-                            <div class="team-row"><span class="team-name ${winB}">${p.tB}</span><span class="team-score ${winB}">${p.pB}</span></div>
-                        </div>
-                        <div class="match-meta">
-                            <div style="font-size:10px; color:var(--hltv-text-muted);">${p.fase}</div>
-                            <div style="color:#fff; font-size:11px;">⭐ ${p.mvp}</div>
-                        </div>
-                    </div>
-                `;
+                let p = historicoPartidas[i]; let winA = p.pA > p.pB ? "team-winner" : ""; let winB = p.pB > p.pA ? "team-winner" : "";
+                containerMatches.innerHTML += `<div class="match-card"><div class="match-status"><span class="status-finished">💥 Fim</span></div><div class="match-teams"><div class="team-row"><span class="team-name ${winA}">${p.tA}</span><span class="team-score ${winA}">${p.pA}</span></div><div class="team-row"><span class="team-name ${winB}">${p.tB}</span><span class="team-score ${winB}">${p.pB}</span></div></div><div class="match-meta"><div style="font-size:10px; color:var(--hltv-text-muted);">${p.fase}</div><div style="color:#fff; font-size:11px;">⭐ ${p.mvp}</div></div></div>`;
             }
         }
     }
 
-    function submeterResultadoAtivo(timeA, timeB) {
+    async function submeterResultadoAtivo(timeA, timeB) {
         const placarA = parseInt(document.getElementById('live-placar-A').value);
         const placarB = parseInt(document.getElementById('live-placar-B').value);
         const mvp = document.getElementById('live-mvp').value.trim() || "Não informado";
-
-        if (isNaN(placarA) || isNaN(placarB) || placarA === placarB) {
-            alert("Insira placares válidos. Empates não são permitidos no CS2.");
-            return;
+        
+        if (isNaN(placarA) || isNaN(placarB) || placarA === placarB) { 
+            alert("Insira placares válidos. Empates não são permitidos no CS2."); 
+            return; 
         }
-
-        let vencedor = placarA > placarB ? timeA : timeB;
+        
+        let vencedor = placarA > placarB ? timeA : timeB; 
         let perdedor = placarA > placarB ? timeB : timeA;
-
         let nomeFaseLog = faseAtual === "grupos" ? "Fase de Grupos" : jogoPlayoffAtivo.infoFase;
-
-        historicoPartidas.push({
-            fase: nomeFaseLog, tA: timeA, tB: timeB, pA: placarA, pB: placarB, mvp: mvp
-        });
+        
+        historicoPartidas.push({ fase: nomeFaseLog, tA: timeA, tB: timeB, pA: placarA, pB: placarB, mvp: mvp });
 
         if (faseAtual === "grupos") {
-            pontuacao[vencedor]++;
-            derrotas[perdedor]++;
+            pontuacao[vencedor] = (pontuacao[vencedor] || 0) + 1;
+            derrotas[perdedor] = (derrotas[perdedor] || 0) + 1;
             
-            // Grava os dados direto no objeto do jogo selecionado
             let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
-            jogo.placarA = placarA;
-            jogo.placarB = placarB;
-            jogo.finalizado = true;
-            jogo.mvp = mvp;
-
-            // Limpa a seleção para obrigar a escolher o próximo
+            jogo.placarA = placarA; jogo.placarB = placarB; jogo.finalizado = true; jogo.mvp = mvp;
             idJogoSelecionado = null; 
-
-            // Verifica se todos os 20 jogos da lista foram finalizados
-            let todosFinalizados = listaJogos.every(j => j.finalizado);
-            if (todosFinalizados) {
-                let tabelaFinal = atualizarTabelaEStatistics();
-                timeHigher = tabelaFinal[0];
+            
+            if (listaJogos.every(j => j.finalizado)) {
+                let tabelaFinal = atualizarTabelaEStatistics(); 
+                timeHigher = tabelaFinal[0]; 
                 classificadosEscalada = [...tabelaFinal];
                 
                 alert(`Fase de Grupos Terminada!\n1º Colocado: ${timeHigher} classificado para o grupo Higher.`);
                 faseAtual = "escalada1";
-                
-                // Monta o primeiro confronto dos playoffs obrigatoriamente
-                jogoPlayoffAtivo = { 
-                    timeA: classificadosEscalada[3], 
-                    timeB: classificadosEscalada[4], 
-                    infoFase: "Escalada (Round 1) - 4º vs 5º" 
-                };
+                jogoPlayoffAtivo = { timeA: classificadosEscalada[3], timeB: classificadosEscalada[4], infoFase: "Escalada (Round 1) - 4º vs 5º" };
             }
         } 
-        else if (faseAtual === "escalada1") {
-            vencedorEscaladaAtual = vencedor;
-            faseAtual = "escalada2";
-            jogoPlayoffAtivo = { 
-                timeA: vencedorEscaladaAtual, 
-                timeB: classificadosEscalada[2], 
-                infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" 
-            };
-        } 
-        else if (faseAtual === "escalada2") {
-            vencedorEscaladaAtual = vencedor;
-            faseAtual = "escalada3";
-            jogoPlayoffAtivo = { 
-                timeA: vencedorEscaladaAtual, 
-                timeB: classificadosEscalada[1], 
-                infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" 
-            };
-        } 
-        else if (faseAtual === "escalada3") {
-            vencedorEscaladaAtual = vencedor;
-            alert(`Fim da Escalada! ${vencedorEscaladaAtual} vai para a Grande Final contra a ${timeHigher}.`);
-            faseAtual = "grandefinal";
-            jogoPlayoffAtivo = { 
-                timeA: timeHigher, 
-                timeB: vencedorEscaladaAtual, 
-                infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" 
-            };
-        } 
-        else if (faseAtual === "grandefinal") {
-            faseAtual = "finalizado";
-            encerrarTorneioCompleto(vencedor);
-            return;
+        else if (faseAtual === "escalada1") { 
+            vencedorEscaladaAtual = vencedor; faseAtual = "escalada2"; 
+            jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[2], infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" }; 
         }
-
+        else if (faseAtual === "escalada2") { 
+            vencedorEscaladaAtual = vencedor; faseAtual = "escalada3"; 
+            jogoPlayoffAtivo = { timeA: vencedorEscaladaAtual, timeB: times[1], infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" }; 
+        }
+        else if (faseAtual === "escalada3") { 
+            vencedorEscaladaAtual = vencedor; 
+            alert(`Fim da Escalada! ${vencedorEscaladaAtual} vai para a Grande Final contra a ${timeHigher}.`); 
+            faseAtual = "grandefinal"; 
+            jogoPlayoffAtivo = { timeA: timeHigher, timeB: vencedorEscaladaAtual, infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" }; 
+        }
+        else if (faseAtual === "grandefinal") { 
+            faseAtual = "finalizado"; 
+            await sincronizarComBanco();
+            document.getElementById('btn-force-reset').classList.add('escondido');
+            encerrarTorneioCompletoVisual(vencedor); 
+            return; 
+        }
+        
+        await sincronizarComBanco();
         renderizarCentralCompleta();
     }
 
-    function encerrarTorneioCompleto(campeao) {
+    function encerrarTorneioCompletoVisual(campeaoOpcional) {
         document.getElementById('central-campeonato').classList.add('escondido');
         document.getElementById('etapa-final').classList.remove('escondido');
-        document.getElementById('campeao-nome').innerText = campeao;
+        
+        if (campeaoOpcional) {
+            document.getElementById('campeao-nome').innerText = campeaoOpcional;
+        } else {
+            let ultima = historicoPartidas[historicoPartidas.length - 1];
+            document.getElementById('campeao-nome').innerText = ultima.pA > ultima.pB ? ultima.tA : ultima.tB;
+        }
 
-        let contagemMvp = {};
+        let contagemMvp = {}; 
         historicoPartidas.forEach(p => { if (p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
-
-        let melhorMvp = "Nenhum MVP de destaque absoluto.";
-        let max = 0;
-        for (let jogador in contagemMvp) {
-            if (contagemMvp[jogador] > max) {
-                max = contagemMvp[jogador];
-                melhorMvp = `🎖️ MVP Oficial do Evento: <strong>${jogador}</strong> (Eleito ${max} vezes o melhor do mapa)`;
-            }
+        
+        let melhorMvp = "Nenhum MVP de destaque absoluto."; let max = 0;
+        for (let j in contagemMvp) { 
+            if (contagemMvp[j] > max) { 
+                max = contagemMvp[j]; 
+                melhorMvp = `🎖️ MVP Oficial do Evento: <strong>${j}</strong> (Eleito ${max} vezes o melhor do mapa)`; 
+            } 
         }
         document.getElementById('mvp-final').innerHTML = melhorMvp;
     }
+
+    async function resetarCampeonatoTotal() {
+        if(confirm("Tem certeza que deseja DELETAR esse campeonato atual do banco de dados e recomeçar?")) {
+            await fetch('/api/campeonato/reset', { method: 'POST' });
+            window.location.reload();
+        }
+    }
+
+    // Executa imediatamente ao carregar a página
+    carregarCampeonatoDoBanco();
 </script>
 </body>
 </html>
