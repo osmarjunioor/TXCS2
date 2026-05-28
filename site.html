@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TX HLTV - CS2 Tournament Manager</title>
+    <style>
+        /* Paleta de Cores e Estilo HLTV */
+        :root {
+            --hltv-bg: #1b1e22;
+            --hltv-nav-bg: #2d3136;
+            --hltv-box-bg: #212428;
+            --hltv-box-header: #2d3136;
+            --hltv-border: #383c42;
+            --hltv-text: #f0f1f2;
+            --hltv-text-muted: #9da2a9;
+            --hltv-orange: #e16b12;
+            --hltv-live: #bd2525;
+            --hltv-green: #4ca64c;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: var(--hltv-bg);
+            color: var(--hltv-text);
+            margin: 0;
+            padding: 0;
+        }
+
+        .header-hltv {
+            background-color: var(--hltv-nav-bg);
+            border-bottom: 3px solid var(--hltv-orange);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-hltv h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+        }
+
+        .header-hltv h1 span {
+            color: var(--hltv-orange);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 0 15px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .hltv-box {
+            background-color: var(--hltv-box-bg);
+            border: 1px solid var(--hltv-border);
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .hltv-box-header {
+            background-color: var(--hltv-box-header);
+            color: var(--hltv-text);
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--hltv-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hltv-box-content { padding: 15px; }
+
+        /* Estilo HLTV Match Card */
+        .match-card {
+            background-color: var(--hltv-box-bg);
+            border: 1px solid var(--hltv-border);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: 90px 1fr 100px;
+            align-items: center;
+            padding: 12px;
+            transition: background 0.2s;
+        }
+
+        .match-card:hover { background-color: #26292e; }
+        
+        .interativo { cursor: pointer; border-left: 3px solid #5d636b; }
+        .interativo:hover { border-left-color: var(--hltv-orange); }
+        .selecionado-live { border-left: 3px solid var(--hltv-live) !important; background: #262121; }
+
+        .match-status {
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-live { color: #fff; background: var(--hltv-live); padding: 2px 6px; border-radius: 2px; font-size: 11px; }
+        .status-upcoming { color: var(--hltv-text-muted); background: #31363c; padding: 2px 6px; border-radius: 2px; font-size: 11px;}
+        .status-finished { color: var(--hltv-green); }
+
+        .match-teams {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-left: 1px solid var(--hltv-border);
+            padding-left: 15px;
+        }
+
+        .team-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+        }
+
+        .team-name { font-weight: bold; color: var(--hltv-text); }
+        .team-score { font-weight: bold; font-size: 16px; color: var(--hltv-text-muted); width: 30px; text-align: right; }
+        .team-winner { color: var(--hltv-orange) !important; }
+
+        .match-meta {
+            text-align: right;
+            font-size: 12px;
+            color: var(--hltv-text-muted);
+            border-left: 1px solid var(--hltv-border);
+            padding-left: 10px;
+        }
+
+        label { display: block; margin: 10px 0 5px; font-weight: bold; font-size: 14px; }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 3px;
+            border: 1px solid var(--hltv-border);
+            background: #181a1d;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        .placar-live-input {
+            width: 60px !important;
+            text-align: center;
+            margin: 0 5px;
+            padding: 5px !important;
+            margin-bottom: 0 !important;
+        }
+
+        button {
+            background: var(--hltv-orange);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            padding: 12px;
+            border-radius: 3px;
+            width: 100%;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+        button:hover { background: #ff8119; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--hltv-border); }
+        th { background-color: var(--hltv-box-header); color: var(--hltv-text-muted); font-weight: normal; }
+        
+        .escondido { display: none !important; }
+        .badge-higher { background: var(--hltv-orange); color: white; padding: 2px 5px; border-radius: 2px; font-size: 11px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header-hltv">
+        <h1>TX-HLTV<span>.org</span> - CS2 Tournament Live Tracker</h1>
+        <div id="formato-badge" style="font-size: 12px; background: #383c42; padding: 5px 10px; border-radius: 3px; font-weight: bold;">CONFIGURANDO</div>
+    </div>
+
+    <div class="container" id="etapa-times" style="max-width: 600px; grid-template-columns: 1fr;">
+        <div class="hltv-box">
+            <div class="hltv-box-header">Configuração de Equipes (5 Equipes - Turno/Returno)</div>
+            <div class="hltv-box-content">
+                <label>Time 1:</label> <input type="text" class="nome-time-input" value="FURIA">
+                <label>Time 2:</label> <input type="text" class="nome-time-input" value="MIBR">
+                <label>Time 3:</label> <input type="text" class="nome-time-input" value="Imperial">
+                <label>Time 4:</label> <input type="text" class="nome-time-input" value="Pain Gaming">
+                <label>Time 5:</label> <input type="text" class="nome-time-input" value="RED Canids">
+                
+                <label>Formato padrão das Partidas:</label>
+                <select id="formato-jogos">
+                    <option value="MD1">Melhor de 1 (MD1)</option>
+                    <option value="MD3">Melhor de 3 (MD3)</option>
+                </select>
+                <button type="button" onclick="iniciarCampeonato()">Lançar Campeonato</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container escondido" id="central-campeonato">
+        
+        <div>
+            <div class="hltv-box" id="bloco-controle-jogo">
+                <div class="hltv-box-header">
+                    <span>Painel de Transmissão / Atualizar Placar</span>
+                    <span class="status-live">LIVE</span>
+                </div>
+                <div class="hltv-box-content" id="area-controle-partida">
+                    </div>
+            </div>
+
+            <div class="hltv-box">
+                <div class="hltv-box-header" id="titulo-lista-matches">Agenda e Resultados (Selecione a partida desejada)</div>
+                <div class="hltv-box-content" id="lista-matches-hltv" style="padding: 10px;">
+                    </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="hltv-box">
+                <div class="hltv-box-header">Tabela de Classificação</div>
+                <div class="hltv-box-content" style="padding: 0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;">#</th>
+                                <th>Equipe</th>
+                                <th style="text-align: center;">V</th>
+                                <th style="text-align: center;">D</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpo-tabela-hltv"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="hltv-box">
+                <div class="hltv-box-header">MVP Tracker</div>
+                <div class="hltv-box-content" id="mvp-sidebar" style="font-size: 14px; color: var(--hltv-text-muted);">
+                    Nenhuma partida finalizada ainda.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container escondido" id="etapa-final" style="max-width: 600px; grid-template-columns: 1fr;">
+        <div class="hltv-box" style="border: 2px solid var(--hltv-orange);">
+            <div class="hltv-box-header" style="background: var(--hltv-orange); color: black; text-align: center; display: block;">🏆 Evento Concluído 🏆</div>
+            <div class="hltv-box-content" style="text-align: center; padding: 40px 20px;">
+                <h2 style="color: var(--hltv-orange); margin: 0 0 10px 0; font-size: 32px;" id="campeao-nome">TIME</h2>
+                <p style="font-size: 18px; color: var(--hltv-text-muted); margin-bottom: 30px;">Grande Campeão do Torneio</p>
+                <div style="background: #2d3136; padding: 15px; border-radius: 4px; border: 1px solid var(--hltv-border);" id="mvp-final"></div>
+                <br><br>
+                <button onclick="window.location.reload()">Resetar e Criar Novo</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let times = [];
+    let formato = "";
+    let pontuacao = {}; 
+    let derrotas = {};
+    
+    let listaJogos = [];
+    let idJogoSelecionado = null; // Controla qual jogo da lista está ativo no painel
+    let historicoPartidas = [];
+
+    let faseAtual = "grupos"; // "grupos", "escalada1", "escalada2", "escalada3", "grandefinal", "finalizado"
+    let classificadosEscalada = [];
+    let vencedorEscaladaAtual = "";
+    let timeHigher = "";
+
+    // Armazena dados fixos dos jogos da fase de escalada/final para não depender da escolha do usuário
+    let jogoPlayoffAtivo = null;
+
+    function iniciarCampeonato() {
+        const inputs = document.querySelectorAll('.nome-time-input');
+        times = Array.from(inputs).map(input => input.value.trim() || "Time");
+        formato = document.getElementById('formato-jogos').value;
+
+        if (new Set(times).size !== 5) {
+            alert("Erro: Certifique-se de que todas as 5 equipes tenham nomes únicos!");
+            return;
+        }
+
+        times.forEach(t => { pontuacao[t] = 0; derrotas[t] = 0; });
+
+        // Monta a lista fixa com identificadores únicos id
+        let idContador = 0;
+        for (let i = 0; i < times.length; i++) {
+            for (let j = 0; j < times.length; j++) {
+                if (i !== j) {
+                    listaJogos.push({ 
+                        id: idContador++, 
+                        timeA: times[i], 
+                        timeB: times[j], 
+                        finalizado: false, 
+                        placarA: "-", 
+                        placarB: "-", 
+                        mvp: "" 
+                    });
+                }
+            }
+        }
+
+        document.getElementById('formato-badge').innerText = `FORMATO: ${formato}`;
+        document.getElementById('etapa-times').classList.add('escondido');
+        document.getElementById('central-campeonato').classList.remove('escondido');
+
+        renderizarCentralCompleta();
+    }
+
+    function renderizarCentralCompleta() {
+        atualizarTabelaEStatistics();
+        renderizarPainelControleAtivo();
+        renderizarListaMatchesHLTV();
+    }
+
+    function atualizarTabelaEStatistics() {
+        const corpo = document.getElementById('corpo-tabela-hltv');
+        corpo.innerHTML = "";
+
+        let ordenados = [...times].sort((a, b) => pontuacao[b] - pontuacao[a]);
+
+        ordenados.forEach((time, index) => {
+            let badge = "";
+            if (faseAtual !== "grupos" && time === timeHigher) {
+                badge = " <span class='badge-higher'>HIGHER</span>";
+            }
+            corpo.innerHTML += `
+                <tr>
+                    <td style="text-align:center; font-weight:bold; color:${index===0?'var(--hltv-orange)':'inherit'}">${index + 1}</td>
+                    <td><span class="team-name">${time}</span>${badge}</td>
+                    <td style="text-align:center; font-weight:bold; color:var(--hltv-green)">${pontuacao[time]}</td>
+                    <td style="text-align:center; color:var(--hltv-live)">${derrotas[time]}</td>
+                </tr>
+            `;
+        });
+
+        let contagemMvp = {};
+        historicoPartidas.forEach(p => { if(p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
+        
+        let mvpHTML = "";
+        let max = 0;
+        for(let j in contagemMvp) {
+            if(contagemMvp[j] > max) { max = contagemMvp[j]; }
+            mvpHTML += `<div><strong>${j}</strong> - ${contagemMvp[j]}x destaque</div>`;
+        }
+        if(mvpHTML !== "") document.getElementById('mvp-sidebar').innerHTML = mvpHTML;
+
+        return ordenados;
+    }
+
+    // Define qual jogo o usuário clicou para transmitir/pontuar
+    function selecionarJogoParaPainel(id) {
+        if(faseAtual !== "grupos") return; // Escolha livre apenas na fase de grupos
+        idJogoSelecionado = id;
+        renderizarCentralCompleta();
+    }
+
+    function renderizarPainelControleAtivo() {
+        const area = document.getElementById('area-controle-partida');
+        area.innerHTML = "";
+
+        if (faseAtual === "finalizado") return;
+
+        let tA = "", tB = "", infoFase = "";
+
+        if (faseAtual === "grupos") {
+            if (idJogoSelecionado === null) {
+                area.innerHTML = `<div style="text-align:center; color:var(--hltv-text-muted); padding:20px;">
+                                    👈 Escolha e clique em uma das partidas listadas abaixo na agenda para abrir o painel e pontuar!
+                                  </div>`;
+                return;
+            }
+            let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
+            tA = jogo.timeA; tB = jogo.timeB;
+            infoFase = `Fase de Grupos - Partida Customizada`;
+        } else {
+            // Nas fases de escalada, os jogos são lineares e obrigatórios
+            tA = jogoPlayoffAtivo.timeA;
+            tB = jogoPlayoffAtivo.timeB;
+            infoFase = jogoPlayoffAtivo.infoFase;
+        }
+
+        area.innerHTML = `
+            <div style="font-size:12px; color:var(--hltv-text-muted); margin-bottom:10px; font-weight:bold;">${infoFase}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#181a1d; padding:15px; border-radius:4px;">
+                <span style="font-weight:bold; font-size:16px;">${tA}</span>
+                <div>
+                    <input type="number" id="live-placar-A" class="placar-live-input" placeholder="0">
+                    <span style="color:var(--hltv-text-muted)">x</span>
+                    <input type="number" id="live-placar-B" class="placar-live-input" placeholder="0">
+                </div>
+                <span style="font-weight:bold; font-size:16px; text-align:right;">${tB}</span>
+            </div>
+            <div style="margin-top:15px;">
+                <label style="margin:0 0 5px 0;">Jogador Destaque (MVP da partida):</label>
+                <input type="text" id="live-mvp" placeholder="Ex: fallen, coldzera">
+            </div>
+            <button onclick="submeterResultadoAtivo('${tA}', '${tB}')" style="margin-top:15px;">Fechar e computar partida</button>
+        `;
+    }
+
+    function renderizarListaMatchesHLTV() {
+        const containerMatches = document.getElementById('lista-matches-hltv');
+        containerMatches.innerHTML = "";
+
+        if (faseAtual === "grupos") {
+            document.getElementById('titulo-lista-matches').innerText = "Agenda da Fase de Grupos (Clique para selecionar)";
+            
+            listaJogos.forEach(jogo => {
+                let statusBadge = `<span class="status-upcoming">Upcoming</span>`;
+                let classeEstilo = "interativo";
+                
+                if (jogo.finalizado) {
+                    statusBadge = `<span class="status-finished">💥 Fim</span>`;
+                    classeEstilo = "";
+                } else if (jogo.id === idJogoSelecionado) {
+                    statusBadge = `<span class="status-live">LIVE</span>`;
+                    classeEstilo = "interativo selecionado-live";
+                }
+
+                let winA = jogo.finalizado && jogo.placarA > jogo.placarB ? "team-winner" : "";
+                let winB = joke=jogo.finalizado && jogo.placarB > jogo.placarA ? "team-winner" : "";
+
+                containerMatches.innerHTML += `
+                    <div class="match-card ${classeEstilo}" onclick="if(!${jogo.finalizado}) selecionarJogoParaPainel(${jogo.id})">
+                        <div class="match-status">${statusBadge}</div>
+                        <div class="match-teams">
+                            <div class="team-row"><span class="team-name ${winA}">${jogo.timeA}</span><span class="team-score ${winA}">${jogo.placarA}</span></div>
+                            <div class="team-row"><span class="team-name ${winB}">${jogo.timeB}</span><span class="team-score ${winB}">${jogo.placarB}</span></div>
+                        </div>
+                        <div class="match-meta">
+                            <div>Grupos</div>
+                            <div style="font-size:10px; color:#fff;">${jogo.mvp ? '⭐ ' + jogo.mvp : formato}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            // Tela de Playoffs (Escalada)
+            document.getElementById('titulo-lista-matches').innerText = "Playoffs - Chave de Escalada";
+            
+            if(faseAtual !== "finalizado" && jogoPlayoffAtivo) {
+                containerMatches.innerHTML += `
+                    <div class="match-card selecionado-live">
+                        <div class="match-status"><span class="status-live">LIVE</span></div>
+                        <div class="match-teams">
+                            <div class="team-row"><span class="team-name">${jogoPlayoffAtivo.timeA}</span><span class="team-score">-</span></div>
+                            <div class="team-row"><span class="team-name">${jogoPlayoffAtivo.timeB}</span><span class="team-score">-</span></div>
+                        </div>
+                        <div class="match-meta"><div>Playoffs</div><div style="color:var(--hltv-orange)">MD3</div></div>
+                    </div>
+                `;
+            }
+
+            // Exibe as que já passaram nos playoffs
+            for(let i = historicoPartidas.length - 1; i >= 0; i--) {
+                let p = historicoPartidas[i];
+                let winA = p.pA > p.pB ? "team-winner" : "";
+                let winB = p.pB > p.pA ? "team-winner" : "";
+
+                containerMatches.innerHTML += `
+                    <div class="match-card">
+                        <div class="match-status"><span class="status-finished">💥 Fim</span></div>
+                        <div class="match-teams">
+                            <div class="team-row"><span class="team-name ${winA}">${p.tA}</span><span class="team-score ${winA}">${p.pA}</span></div>
+                            <div class="team-row"><span class="team-name ${winB}">${p.tB}</span><span class="team-score ${winB}">${p.pB}</span></div>
+                        </div>
+                        <div class="match-meta">
+                            <div style="font-size:10px; color:var(--hltv-text-muted);">${p.fase}</div>
+                            <div style="color:#fff; font-size:11px;">⭐ ${p.mvp}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    function submeterResultadoAtivo(timeA, timeB) {
+        const placarA = parseInt(document.getElementById('live-placar-A').value);
+        const placarB = parseInt(document.getElementById('live-placar-B').value);
+        const mvp = document.getElementById('live-mvp').value.trim() || "Não informado";
+
+        if (isNaN(placarA) || isNaN(placarB) || placarA === placarB) {
+            alert("Insira placares válidos. Empates não são permitidos no CS2.");
+            return;
+        }
+
+        let vencedor = placarA > placarB ? timeA : timeB;
+        let perdedor = placarA > placarB ? timeB : timeA;
+
+        let nomeFaseLog = faseAtual === "grupos" ? "Fase de Grupos" : jogoPlayoffAtivo.infoFase;
+
+        historicoPartidas.push({
+            fase: nomeFaseLog, tA: timeA, tB: timeB, pA: placarA, pB: placarB, mvp: mvp
+        });
+
+        if (faseAtual === "grupos") {
+            pontuacao[vencedor]++;
+            derrotas[perdedor]++;
+            
+            // Grava os dados direto no objeto do jogo selecionado
+            let jogo = listaJogos.find(j => j.id === idJogoSelecionado);
+            jogo.placarA = placarA;
+            jogo.placarB = placarB;
+            jogo.finalizado = true;
+            jogo.mvp = mvp;
+
+            // Limpa a seleção para obrigar a escolher o próximo
+            idJogoSelecionado = null; 
+
+            // Verifica se todos os 20 jogos da lista foram finalizados
+            let todosFinalizados = listaJogos.every(j => j.finalizado);
+            if (todosFinalizados) {
+                let tabelaFinal = atualizarTabelaEStatistics();
+                timeHigher = tabelaFinal[0];
+                classificadosEscalada = [...tabelaFinal];
+                
+                alert(`Fase de Grupos Terminada!\n1º Colocado: ${timeHigher} classificado para o grupo Higher.`);
+                faseAtual = "escalada1";
+                
+                // Monta o primeiro confronto dos playoffs obrigatoriamente
+                jogoPlayoffAtivo = { 
+                    timeA: classificadosEscalada[3], 
+                    timeB: classificadosEscalada[4], 
+                    infoFase: "Escalada (Round 1) - 4º vs 5º" 
+                };
+            }
+        } 
+        else if (faseAtual === "escalada1") {
+            vencedorEscaladaAtual = vencedor;
+            faseAtual = "escalada2";
+            jogoPlayoffAtivo = { 
+                timeA: vencedorEscaladaAtual, 
+                timeB: classificadosEscalada[2], 
+                infoFase: "Escalada (Semifinal) - Vencedor R1 vs 3º" 
+            };
+        } 
+        else if (faseAtual === "escalada2") {
+            vencedorEscaladaAtual = vencedor;
+            faseAtual = "escalada3";
+            jogoPlayoffAtivo = { 
+                timeA: vencedorEscaladaAtual, 
+                timeB: classificadosEscalada[1], 
+                infoFase: "Escalada (Final Consolação) - Vencedor Semi vs 2º" 
+            };
+        } 
+        else if (faseAtual === "escalada3") {
+            vencedorEscaladaAtual = vencedor;
+            alert(`Fim da Escalada! ${vencedorEscaladaAtual} vai para a Grande Final contra a ${timeHigher}.`);
+            faseAtual = "grandefinal";
+            jogoPlayoffAtivo = { 
+                timeA: timeHigher, 
+                timeB: vencedorEscaladaAtual, 
+                infoFase: "🏆 GRANDE FINAL DO GRUPO HIGHER 🏆" 
+            };
+        } 
+        else if (faseAtual === "grandefinal") {
+            faseAtual = "finalizado";
+            encerrarTorneioCompleto(vencedor);
+            return;
+        }
+
+        renderizarCentralCompleta();
+    }
+
+    function encerrarTorneioCompleto(campeao) {
+        document.getElementById('central-campeonato').classList.add('escondido');
+        document.getElementById('etapa-final').classList.remove('escondido');
+        document.getElementById('campeao-nome').innerText = campeao;
+
+        let contagemMvp = {};
+        historicoPartidas.forEach(p => { if (p.mvp && p.mvp !== "Não informado") contagemMvp[p.mvp] = (contagemMvp[p.mvp] || 0) + 1; });
+
+        let melhorMvp = "Nenhum MVP de destaque absoluto.";
+        let max = 0;
+        for (let jogador in contagemMvp) {
+            if (contagemMvp[jogador] > max) {
+                max = contagemMvp[jogador];
+                melhorMvp = `🎖️ MVP Oficial do Evento: <strong>${jogador}</strong> (Eleito ${max} vezes o melhor do mapa)`;
+            }
+        }
+        document.getElementById('mvp-final').innerHTML = melhorMvp;
+    }
+</script>
+</body>
+</html>
